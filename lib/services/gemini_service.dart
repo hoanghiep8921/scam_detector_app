@@ -4,10 +4,16 @@ import '../core/constants/api_config.dart';
 import '../data/models/scam_check_result.dart';
 import '../data/models/risk_level.dart';
 
-/// Wraps the Gemini Flash model and produces structured ScamCheckResult.
+/// Wraps Gemini Flash for **on-demand** behavioural analysis.
 ///
-/// The model is instructed to return strict JSON. We parse defensively;
-/// if parsing fails we fall back to an "unknown" result with the raw text.
+/// The prompt asks the model to combine three lenses:
+///
+///   1. **Linguistics** (`linguistic`)   — language red flags
+///   2. **Cybersecurity** (`cybersecurity`) — technical / infrastructure cues
+///   3. **Social psychology** (`socialTactics`) — Cialdini-style persuasion
+///
+/// The classic `psychological` axes (urgency / fear / authority / greed) are
+/// kept as numeric for the radar chart.
 class GeminiService {
   GeminiService();
 
@@ -25,9 +31,6 @@ class GeminiService {
     );
   }
 
-  /// Analyze a phone number, bank account, or URL.
-  /// Returns a [ScamCheckResult]. If the API key is missing, returns a
-  /// stub result so the UI flow can still be demonstrated.
   Future<ScamCheckResult> analyze({
     required CheckTarget target,
     required String input,
@@ -69,38 +72,69 @@ class GeminiService {
       CheckTarget.phone => 'số điện thoại',
       CheckTarget.bankAccount => 'số tài khoản ngân hàng',
       CheckTarget.url => 'đường dẫn website',
+      CheckTarget.content => 'nội dung tin nhắn / mô tả tình huống',
     };
+    final inputBlock = target == CheckTarget.content
+        ? '''
+Nội dung cần phân tích (có thể là tin nhắn nạn nhân nhận được, mô tả cuộc gọi
+đáng ngờ, hoặc kịch bản tình huống):
+
+"""
+$input
+"""'''
+        : 'Đối tượng cần đánh giá: "$input"  (loại: ${target.name} — $targetVi)';
 
     return '''
-Bạn là chuyên gia phân tích lừa đảo trực tuyến tại Việt Nam.
-Hãy đánh giá $targetVi sau và trả về JSON THUẦN (không markdown, không text thừa):
+Bạn là **chuyên gia phòng chống lừa đảo Việt Nam** kết hợp 3 chuyên môn:
+ngôn ngữ học (linguistics), an ninh mạng (cybersecurity) và tâm lý học xã hội
+(social psychology, Cialdini & Hofstede).
 
-Đối tượng cần kiểm tra: "$input"
-Loại: ${target.name}
+$inputBlock
 
-Phân tích các khía cạnh:
-1. Mức độ rủi ro (0-100)
-2. Phân loại: "safe" / "suspicious" / "scam"
-3. Các yếu tố tâm lý lừa đảo (0-100 mỗi yếu tố):
-   - urgency: tạo áp lực thời gian
-   - fear: đe doạ, gây sợ hãi
-   - authority: giả danh cơ quan/tổ chức
-   - greed: hứa hẹn lợi ích lớn
-4. Lý do cụ thể (3-5 gạch đầu dòng, dễ hiểu cho người dùng phổ thông)
-5. Tóm tắt 1-2 câu
+Hãy phân tích **đa góc nhìn** và trả về JSON THUẦN (không markdown, không text thừa)
+theo schema dưới đây. Mỗi danh sách signal nên có 1–4 mục, ngắn (≤25 từ),
+cụ thể, dễ hiểu cho người dùng phổ thông Việt Nam.
 
-Định dạng JSON BẮT BUỘC:
+### 1. Ngôn ngữ học (`linguistic`)
+Dấu hiệu trong cách diễn đạt / ngôn ngữ: từ khoá hối thúc, kịch bản lặp,
+mạo danh ngân hàng/cơ quan trong tên hiển thị, lỗi chính tả/ngữ pháp lạ,
+giọng điệu hù doạ vs. dụ dỗ, dùng tiếng nước ngoài bất thường.
+
+### 2. An ninh mạng (`cybersecurity`)
+Dấu hiệu kỹ thuật: cấu trúc tên miền (typo-squatting, TLD lạ như .xyz/.tk),
+HTTPS giả, redirect, dải đầu số đã từng lừa đảo, mẫu IBAN mở dưới tên giả,
+chứng chỉ SSL, brand impersonation.
+
+### 3. Tâm lý xã hội (`socialTactics`)
+Áp dụng 6 nguyên tắc thuyết phục Cialdini (Reciprocity / Commitment /
+Social Proof / Authority / Liking / Scarcity) và các cơ chế thao túng cảm xúc
+phổ biến. Liệt kê thủ thuật cụ thể đối tượng đang dùng (vd. "giả danh công an
+tạo authority", "deadline 5 phút tạo scarcity").
+
+### 4. Yếu tố tâm lý định lượng (`psychological`)
+Vẫn cho điểm 0–100 cho 4 trục cũ: urgency, fear, authority, greed.
+
+### 5. Tổng hợp
+- `riskScore`: 0–100
+- `riskLevel`: "safe" / "suspicious" / "scam"
+- `summary`: 1–2 câu kết luận tiếng Việt
+- `reasons`: 3–5 lý do trọng yếu (gộp được từ 3 góc nhìn trên)
+
+JSON BẮT BUỘC (không thêm field):
 {
   "riskScore": <int 0-100>,
   "riskLevel": "<safe|suspicious|scam>",
   "summary": "<1-2 câu tiếng Việt>",
-  "reasons": ["<lý do 1>", "<lý do 2>", "..."],
+  "reasons": ["<lý do 1>", "..."],
   "psychological": {
     "urgency": <0-100>,
     "fear": <0-100>,
     "authority": <0-100>,
     "greed": <0-100>
-  }
+  },
+  "linguistic": ["<dấu hiệu ngôn ngữ 1>", "..."],
+  "cybersecurity": ["<dấu hiệu kỹ thuật 1>", "..."],
+  "socialTactics": ["<thủ thuật xã hội 1>", "..."]
 }
 ''';
   }
@@ -112,7 +146,6 @@ Phân tích các khía cạnh:
     required String text,
   }) {
     try {
-      // Strip potential markdown fences just in case.
       var cleaned = text.trim();
       if (cleaned.startsWith('```')) {
         cleaned = cleaned.replaceAll(RegExp(r'^```(?:json)?\s*'), '');
@@ -126,6 +159,10 @@ Phân tích các khía cạnh:
           ? RiskLevel.fromScore(score)
           : RiskLevel.fromString(levelStr);
 
+      List<String> readList(String key) =>
+          (json[key] as List?)?.cast<dynamic>().map((e) => e.toString()).toList() ??
+          const [];
+
       return ScamCheckResult(
         id: resultId,
         target: target,
@@ -133,10 +170,13 @@ Phân tích các khía cạnh:
         riskLevel: level,
         riskScore: score,
         summary: json['summary'] as String? ?? '',
-        reasons: (json['reasons'] as List?)?.cast<String>() ?? const [],
+        reasons: readList('reasons'),
         psychological: PsychologicalFactors.fromJson(
           (json['psychological'] as Map?)?.cast<String, dynamic>() ?? const {},
         ),
+        linguisticSignals: readList('linguistic'),
+        cyberSignals: readList('cybersecurity'),
+        socialTactics: readList('socialTactics'),
         checkedAt: DateTime.now(),
       );
     } catch (_) {
@@ -154,7 +194,6 @@ Phân tích các khía cạnh:
     }
   }
 
-  /// Returned when no API key is configured. Lets the UI flow be demonstrated.
   ScamCheckResult _stubResult({
     required CheckTarget target,
     required String input,

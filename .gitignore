@@ -49,3 +49,9 @@ app.*.map.json
 *.keystore
 *.jks
 key.properties
+
+# Binary distribution APKs (built locally, do not commit)
+dist/
+
+# Claude Code local state
+.claude/

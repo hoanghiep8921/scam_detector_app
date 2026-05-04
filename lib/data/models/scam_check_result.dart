@@ -1,6 +1,6 @@
 import 'risk_level.dart';
 
-enum CheckTarget { phone, bankAccount, url }
+enum CheckTarget { phone, bankAccount, url, content }
 
 extension CheckTargetX on CheckTarget {
   String get label {
@@ -11,6 +11,8 @@ extension CheckTargetX on CheckTarget {
         return 'Tài khoản ngân hàng';
       case CheckTarget.url:
         return 'Đường dẫn';
+      case CheckTarget.content:
+        return 'Nội dung tin nhắn';
     }
   }
 }
@@ -48,15 +50,31 @@ class PsychologicalFactors {
 }
 
 /// Outcome of a scam check, regardless of target type.
+///
+/// AI analysis combines three lenses: linguistics, cybersecurity and social
+/// psychology. Each lens contributes a list of human-readable signals.
 class ScamCheckResult {
   final String id;
   final CheckTarget target;
   final String input;
   final RiskLevel riskLevel;
-  final int riskScore;          // 0-100
-  final String summary;         // 1-2 dòng tóm tắt
-  final List<String> reasons;   // các lý do explainable
+  final int riskScore;
+  final String summary;
+  final List<String> reasons;
   final PsychologicalFactors psychological;
+
+  /// Linguistic red flags detected (e.g. urgency words, scripted phrasing,
+  /// translation artifacts, brand impersonation in copy).
+  final List<String> linguisticSignals;
+
+  /// Cybersecurity red flags (e.g. suspicious TLD, typo-squatting domain,
+  /// reused scam phone-number range, mismatched ASN, etc).
+  final List<String> cyberSignals;
+
+  /// Social-psychology persuasion tactics (Cialdini-style: authority,
+  /// scarcity, reciprocity, commitment, social proof, liking) detected.
+  final List<String> socialTactics;
+
   final DateTime checkedAt;
 
   const ScamCheckResult({
@@ -68,8 +86,38 @@ class ScamCheckResult {
     required this.summary,
     required this.reasons,
     required this.psychological,
+    this.linguisticSignals = const [],
+    this.cyberSignals = const [],
+    this.socialTactics = const [],
     required this.checkedAt,
   });
+
+  ScamCheckResult copyWith({
+    String? id,
+    RiskLevel? riskLevel,
+    int? riskScore,
+    String? summary,
+    List<String>? reasons,
+    PsychologicalFactors? psychological,
+    List<String>? linguisticSignals,
+    List<String>? cyberSignals,
+    List<String>? socialTactics,
+    DateTime? checkedAt,
+  }) =>
+      ScamCheckResult(
+        id: id ?? this.id,
+        target: target,
+        input: input,
+        riskLevel: riskLevel ?? this.riskLevel,
+        riskScore: riskScore ?? this.riskScore,
+        summary: summary ?? this.summary,
+        reasons: reasons ?? this.reasons,
+        psychological: psychological ?? this.psychological,
+        linguisticSignals: linguisticSignals ?? this.linguisticSignals,
+        cyberSignals: cyberSignals ?? this.cyberSignals,
+        socialTactics: socialTactics ?? this.socialTactics,
+        checkedAt: checkedAt ?? this.checkedAt,
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -80,22 +128,32 @@ class ScamCheckResult {
         'summary': summary,
         'reasons': reasons,
         'psychological': psychological.toJson(),
+        'linguisticSignals': linguisticSignals,
+        'cyberSignals': cyberSignals,
+        'socialTactics': socialTactics,
         'checkedAt': checkedAt.toIso8601String(),
       };
 
   factory ScamCheckResult.fromJson(Map<String, dynamic> json) {
+    List<String> readList(String key) =>
+        (json[key] as List?)?.cast<String>() ?? const [];
     return ScamCheckResult(
       id: json['id'] as String,
-      target: CheckTarget.values
-          .firstWhere((e) => e.name == json['target'], orElse: () => CheckTarget.phone),
+      target: CheckTarget.values.firstWhere(
+        (e) => e.name == json['target'],
+        orElse: () => CheckTarget.phone,
+      ),
       input: json['input'] as String,
       riskLevel: RiskLevel.fromString(json['riskLevel'] as String?),
       riskScore: (json['riskScore'] as num?)?.toInt() ?? 0,
       summary: json['summary'] as String? ?? '',
-      reasons: (json['reasons'] as List?)?.cast<String>() ?? const [],
+      reasons: readList('reasons'),
       psychological: PsychologicalFactors.fromJson(
         (json['psychological'] as Map?)?.cast<String, dynamic>() ?? const {},
       ),
+      linguisticSignals: readList('linguisticSignals'),
+      cyberSignals: readList('cyberSignals'),
+      socialTactics: readList('socialTactics'),
       checkedAt: DateTime.tryParse(json['checkedAt'] as String? ?? '') ??
           DateTime.now(),
     );

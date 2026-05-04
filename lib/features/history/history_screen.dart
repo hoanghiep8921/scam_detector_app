@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../services/call_screening_service.dart';
 import '../../shared/widgets/risk_badge.dart';
 import '../result/result_screen.dart';
 import '../scam_check/scam_check_provider.dart';
@@ -18,8 +19,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ScamCheckProvider>().loadHistory();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final provider = context.read<ScamCheckProvider>();
+      await provider.loadHistory();
+      // Drain any natively-screened calls the user hasn't tapped through yet
+      // so they show up in the list immediately.
+      final events = await CallScreeningService().drainScreeningEvents();
+      if (events.isNotEmpty && mounted) {
+        await provider.ingestScreenedCalls(events);
+      }
     });
   }
 
