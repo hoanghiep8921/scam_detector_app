@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/api_config.dart';
@@ -295,7 +296,7 @@ class LocalRiskService {
           .cast<Map<String, dynamic>>()
           .map(_Entry.fromSupabaseRow)
           .toList();
-    } on PostgrestException catch (e) {
+    } on PostgrestException catch (e, stack) {
       // Most common: PGRST205 — table doesn't exist (migration not run).
       if (e.code == 'PGRST205' || (e.message).contains('known_risks')) {
         lastRefreshError =
@@ -303,9 +304,16 @@ class LocalRiskService {
       } else {
         lastRefreshError = 'Supabase trả về lỗi: ${e.code} — ${e.message}';
       }
+      await Sentry.captureException(e, stackTrace: stack, withScope: (s) {
+        s.setTag('service', 'supabase');
+        s.setContexts('supabase', {'op': 'select_known_risks', 'code': e.code});
+      });
       return null;
-    } catch (e) {
+    } catch (e, stack) {
       lastRefreshError = 'Lỗi kết nối: $e';
+      await Sentry.captureException(e, stackTrace: stack, withScope: (s) {
+        s.setTag('service', 'supabase');
+      });
       return null;
     }
   }

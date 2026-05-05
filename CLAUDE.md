@@ -12,10 +12,12 @@ Tài liệu ngữ cảnh cho Claude Code. Đọc đầu mỗi phiên làm việc
 - Đường dẫn website (URL phishing)
 - Nội dung tin nhắn / email (free-text → AI)
 
-Tích hợp **Gemini Flash** (`gemini-2.5-flash`, có thể đổi qua
-`ApiConfig.geminiModel`) để phân tích **hành vi đa góc nhìn**:
-**ngôn ngữ học + an ninh mạng + tâm lý học xã hội** (Cialdini). Ưu tiên kết
-quả **explainable** (có lý do cụ thể, không chỉ điểm số), tiếng Việt phổ thông.
+Tích hợp **Gemini Flash** (default `gemini-flash-latest` — alias auto-rotate
+sang Flash mới nhất, override qua `.env` `GEMINI_MODEL=...`) để phân tích
+**hành vi đa góc nhìn**: **ngôn ngữ học + an ninh mạng + tâm lý học xã hội**
+(Cialdini). Hỗ trợ **multimodal**: text + ảnh + video (tối đa 5 ảnh + 1 video,
+~18 MB / request). Ưu tiên kết quả **explainable** (có lý do cụ thể, không
+chỉ điểm số), tiếng Việt phổ thông.
 
 ## 2. Stack
 

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../core/constants/api_config.dart';
+import '../data/models/media_attachment.dart';
 import '../data/models/scam_check_result.dart';
 import '../data/models/risk_level.dart';
 
@@ -35,16 +37,33 @@ class GeminiService {
     required CheckTarget target,
     required String input,
     required String resultId,
+    List<MediaAttachment> attachments = const [],
   }) async {
     final model = _getModel();
     if (model == null) {
       return _stubResult(target: target, input: input, resultId: resultId);
     }
 
-    final prompt = _buildPrompt(target: target, input: input);
+    final prompt = _buildPrompt(
+      target: target,
+      input: input,
+      attachments: attachments,
+    );
 
     try {
-      final response = await model.generateContent([Content.text(prompt)]);
+      // Multimodal request: text + image(s) + (optional) video. Gemini Flash
+      // accepts up to ~20MB of inline data per request — caller must already
+      // have size-checked. Falls back to plain text-only when no attachments.
+      final Content content;
+      if (attachments.isEmpty) {
+        content = Content.text(prompt);
+      } else {
+        content = Content.multi([
+          TextPart(prompt),
+          for (final m in attachments) DataPart(m.mimeType, m.bytes),
+        ]);
+      }
+      final response = await model.generateContent([content]);
       final text = response.text ?? '';
       return _parseResponse(
         target: target,
@@ -52,36 +71,115 @@ class GeminiService {
         resultId: resultId,
         text: text,
       );
-    } catch (e) {
+    } catch (e, stack) {
+      // Caught for graceful UX, but ALSO forward to Sentry so the error shows
+      // up in the dashboard. Tag with model + attachments so we can filter.
+      await Sentry.captureException(
+        e,
+        stackTrace: stack,
+        withScope: (scope) {
+          scope.setTag('service', 'gemini');
+          scope.setContexts('gemini', {
+            'model': ApiConfig.geminiModel,
+            'target': target.name,
+            'attachments': attachments.length,
+            'images': attachments
+                .where((a) => a.kind == MediaKind.image)
+                .length,
+            'videos': attachments
+                .where((a) => a.kind == MediaKind.video)
+                .length,
+          });
+        },
+      );
+      final pretty = _humanizeGeminiError(e);
       return ScamCheckResult(
         id: resultId,
         target: target,
         input: input,
         riskLevel: RiskLevel.unknown,
         riskScore: 0,
-        summary: 'Không thể kết nối đến AI. Vui lòng thử lại.',
-        reasons: ['Lỗi: ${e.toString()}'],
+        summary: pretty.summary,
+        reasons: pretty.reasons,
         psychological: const PsychologicalFactors(),
         checkedAt: DateTime.now(),
       );
     }
   }
 
-  String _buildPrompt({required CheckTarget target, required String input}) {
+  /// Convert raw Gemini error into a user-friendly Vietnamese message.
+  /// Returns (summary, reasons) — reasons exposes the underlying error so the
+  /// user can still copy-paste to support if needed.
+  ({String summary, List<String> reasons}) _humanizeGeminiError(Object e) {
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('unsupporteduserlocation') ||
+        msg.contains('user location') ||
+        msg.contains('not supported')) {
+      return (
+        summary:
+            'Tài khoản Gemini của bạn ở vùng chưa hỗ trợ model hoặc tính năng '
+            'multimodal. Đổi `GEMINI_MODEL=gemini-1.5-flash` trong .env hoặc '
+            'tạo lại API key từ Google account khác.',
+        reasons: [
+          'Lỗi: ${e.toString()}',
+          'Mẹo: gemini-1.5-flash hỗ trợ rộng hơn 2.5-flash tại VN.',
+        ],
+      );
+    }
+    if (msg.contains('quota') || msg.contains('rate limit')) {
+      return (
+        summary: 'Vượt quota Gemini. Đợi 1 phút rồi thử lại.',
+        reasons: ['Lỗi: ${e.toString()}'],
+      );
+    }
+    if (msg.contains('safety') || msg.contains('blocked')) {
+      return (
+        summary: 'Gemini từ chối phân tích vì bộ lọc an toàn. Thử mô tả nhẹ hơn.',
+        reasons: ['Lỗi: ${e.toString()}'],
+      );
+    }
+    return (
+      summary: 'Không thể kết nối đến AI. Vui lòng thử lại.',
+      reasons: ['Lỗi: ${e.toString()}'],
+    );
+  }
+
+  String _buildPrompt({
+    required CheckTarget target,
+    required String input,
+    List<MediaAttachment> attachments = const [],
+  }) {
     final targetVi = switch (target) {
       CheckTarget.phone => 'số điện thoại',
       CheckTarget.bankAccount => 'số tài khoản ngân hàng',
       CheckTarget.url => 'đường dẫn website',
       CheckTarget.content => 'nội dung tin nhắn / mô tả tình huống',
     };
-    final inputBlock = target == CheckTarget.content
+    final hasMedia = attachments.isNotEmpty;
+    final imgCount = attachments.where((a) => a.kind == MediaKind.image).length;
+    final vidCount = attachments.where((a) => a.kind == MediaKind.video).length;
+    final mediaBlock = hasMedia
         ? '''
-Nội dung cần phân tích (có thể là tin nhắn nạn nhân nhận được, mô tả cuộc gọi
-đáng ngờ, hoặc kịch bản tình huống):
+
+Người dùng đính kèm:
+${imgCount > 0 ? '- $imgCount ảnh (chụp màn hình tin nhắn / cuộc gọi / website / video call).' : ''}
+${vidCount > 0 ? '- $vidCount video (record màn hình hội thoại / quảng cáo / cuộc gọi).' : ''}
+
+Hãy đọc nội dung văn bản trong ảnh (OCR), giao diện thương hiệu, kịch bản trong
+video, ngôn ngữ cơ thể nếu có. Phân tích cùng với phần text user gửi (nếu có).
+Nếu phát hiện logo / tên ngân hàng / số tài khoản / URL trong ảnh, trích ra
+trong `reasons`.'''
+        : '';
+
+    final inputBlock = target == CheckTarget.content
+        ? (input.isEmpty
+            ? 'Người dùng KHÔNG cung cấp text — phân tích hoàn toàn từ media đính kèm.'
+            : '''
+Nội dung text user cung cấp:
 
 """
 $input
-"""'''
+"""''') + mediaBlock
         : 'Đối tượng cần đánh giá: "$input"  (loại: ${target.name} — $targetVi)';
 
     return '''

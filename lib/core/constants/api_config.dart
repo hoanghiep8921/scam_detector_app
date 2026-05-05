@@ -18,9 +18,16 @@ class ApiConfig {
   /// Gemini Flash API key. Loaded from `.env` (key `GEMINI_API_KEY`).
   static String get geminiApiKey => _env('GEMINI_API_KEY');
 
-  /// Gemini model identifier — using Flash for speed/cost.
-  /// (gemini-1.5-* đã deprecate; dùng 2.5-flash cho generation hiện tại.)
-  static const String geminiModel = 'gemini-2.5-flash';
+  /// Gemini model identifier. Override via `.env` `GEMINI_MODEL=...` if needed.
+  ///
+  /// Default = `gemini-flash-latest` — Google auto-rotates this alias to the
+  /// most current stable Gemini Flash so we don't hit "model not found" when
+  /// older versions get retired (e.g. gemini-1.5-flash was removed from new
+  /// API keys). Native multimodal (text + image + short video) supported.
+  static String get geminiModel {
+    final override = _env('GEMINI_MODEL');
+    return override.isEmpty ? 'gemini-flash-latest' : override;
+  }
 
   static bool get hasGeminiKey =>
       geminiApiKey.isNotEmpty &&
@@ -37,4 +44,15 @@ class ApiConfig {
       supabaseUrl.isNotEmpty &&
       supabaseAnonKey.isNotEmpty &&
       !supabaseUrl.contains('xxxxxx');
+
+  /// Sentry DSN. Empty → Sentry disabled (no crash reporting).
+  static String get sentryDsn => _env('SENTRY_DSN');
+
+  /// Tag in Sentry dashboard. Defaults to "production" if not set.
+  static String get sentryEnvironment {
+    final env = _env('SENTRY_ENV');
+    return env.isEmpty ? 'production' : env;
+  }
+
+  static bool get hasSentry => sentryDsn.startsWith('https://');
 }

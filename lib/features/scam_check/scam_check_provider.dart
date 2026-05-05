@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import '../../data/models/media_attachment.dart';
 import '../../data/models/risk_level.dart';
 import '../../data/models/scam_check_result.dart';
 import '../../services/call_screening_service.dart';
@@ -54,9 +55,13 @@ class ScamCheckProvider extends ChangeNotifier {
   Future<ScamCheckResult?> check({
     required CheckTarget target,
     required String input,
+    List<MediaAttachment> attachments = const [],
   }) async {
     final trimmed = input.trim();
-    if (trimmed.isEmpty) {
+    // For free-text content, allow empty input when at least one media file
+    // is attached (image/video-only analysis). Otherwise text is required.
+    if (trimmed.isEmpty &&
+        !(target == CheckTarget.content && attachments.isNotEmpty)) {
       _error = 'Vui lòng nhập thông tin cần kiểm tra.';
       notifyListeners();
       return null;
@@ -71,11 +76,12 @@ class ScamCheckProvider extends ChangeNotifier {
       ScamCheckResult result;
       if (target == CheckTarget.content) {
         // Free-text content has no useful local / remote lookup — go straight
-        // to Gemini for behavioural analysis.
+        // to Gemini for behavioural + multimodal analysis.
         result = await _gemini.analyze(
           target: target,
           input: trimmed,
           resultId: id,
+          attachments: attachments,
         );
       } else {
         // 1. Local known list — instant exact match.

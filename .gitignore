@@ -53,5 +53,8 @@ key.properties
 # Binary distribution APKs (built locally, do not commit)
 dist/
 
+# Test fixtures (videos / large media used for AI multimodal smoke tests)
+assets/*.mp4
+
 # Claude Code local state
 .claude/

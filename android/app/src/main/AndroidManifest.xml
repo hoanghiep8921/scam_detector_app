@@ -13,6 +13,13 @@
     <!-- Pop the warning overlay full-screen when a scam call lands. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
+    <!-- Multimodal AI analysis: pick images / videos to send to Gemini.
+         API 33+ uses granular media perms; older Android falls back to the
+         legacy storage permission auto-injected by image_picker. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application
         android:label="scam_detector"
         android:name="${applicationName}"

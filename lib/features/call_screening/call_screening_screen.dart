@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import '../../core/constants/api_config.dart';
 import '../../services/call_screening_service.dart';
 import '../../services/data_reset_service.dart';
 import '../../services/local_risk_service.dart';
@@ -86,6 +88,28 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
       );
     }
     await _refresh();
+  }
+
+  Future<void> _testSentry() async {
+    final messenger = ScaffoldMessenger.of(context);
+    // 1. Send a normal message — appears in Sentry "Issues" as a non-error.
+    await Sentry.captureMessage(
+      'Manual test from Bảo Vệ tab',
+      level: SentryLevel.info,
+    );
+    // 2. Synthesise an exception with stack trace.
+    try {
+      throw StateError('ScamGuard test exception ${DateTime.now()}');
+    } catch (e, stack) {
+      await Sentry.captureException(e, stackTrace: stack);
+    }
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Đã gửi test event lên Sentry. Vào dashboard sentry.io để xác nhận.',
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmReset() async {
@@ -252,6 +276,17 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
                         'Xoá lịch sử, blocklist offline, cache và device id. Bắt đầu lại từ trạng thái sạch.',
                     onTap: _confirmReset,
                   ),
+                  if (ApiConfig.hasSentry) ...[
+                    const SizedBox(height: 10),
+                    _NavTile(
+                      icon: Icons.bug_report_outlined,
+                      accent: AppColors.riskMedium,
+                      title: 'Gửi sự kiện test tới Sentry',
+                      subtitle:
+                          'Bắn 1 message + 1 exception để xác nhận crash reporting đang hoạt động.',
+                      onTap: _testSentry,
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   const _Notes(),
                 ],

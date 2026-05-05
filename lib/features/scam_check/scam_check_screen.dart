@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/scam_check_result.dart';
 import '../../shared/widgets/scanning_overlay.dart';
+import '../content_analysis/content_analysis_screen.dart';
 import '../history/history_screen.dart';
 import '../result/result_screen.dart';
 import 'scam_check_provider.dart';
@@ -96,6 +97,14 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                 _SegmentedTargetSelector(
                   target: _target,
                   onChanged: (t) {
+                    if (t == CheckTarget.content) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ContentAnalysisScreen(),
+                        ),
+                      );
+                      return;
+                    }
                     setState(() => _target = t);
                     _formKey.currentState?.reset();
                   },

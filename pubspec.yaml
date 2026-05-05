@@ -1,7 +1,7 @@
 name: scam_detector
 description: "AI-powered scam detection app for phone numbers, bank accounts, and URLs."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.11.5
@@ -37,6 +37,13 @@ dependencies:
 
   # Typography (Public Sans + Inter, per Stitch "Sentinel Assurance" design system)
   google_fonts: ^6.2.1
+
+  # Crash + error reporting (sentry.io). DSN read from .env at runtime —
+  # disabled if SENTRY_DSN is empty so dev builds don't pollute production.
+  sentry_flutter: ^8.9.0
+
+  # Pick images / videos from gallery or camera for multimodal AI analysis.
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
