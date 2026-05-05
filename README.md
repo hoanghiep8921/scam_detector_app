@@ -8,6 +8,9 @@ Gemini Flash phân tích hành vi theo **3 góc nhìn kết hợp**:
 - 🛡️ **An ninh mạng** — typo-squatting, TLD lạ, mule account, brand impersonation
 - 🧠 **Tâm lý học xã hội** — 6 nguyên tắc Cialdini + thao túng cảm xúc
 
+Multimodal: AI đọc cả **ảnh** (OCR tin nhắn / website / call-log) và **video**
+(record màn hình / video call) cùng với text. Tối đa 5 ảnh + 1 video / lượt.
+
 Lookup **cộng đồng (Supabase) → AI on-demand**. Mọi cảnh báo có lý do
 explainable cho người dùng phổ thông tiếng Việt.
 
@@ -32,6 +35,10 @@ explainable cho người dùng phổ thông tiếng Việt.
 | 16  | Production icon + release keystore + split-per-ABI APK            | ✅          |
 | 17  | Tắt Auto Backup + permission INTERNET cho release build           | ✅          |
 | 18  | Loading Gemini-style (sparkles orbit + sweep gradient ring)       | ✅          |
+| 19  | Multimodal AI: text + ảnh + video qua Gemini Flash                | ✅          |
+| 20  | Sentry crash + error reporting (auto-disable khi DSN rỗng)        | ✅          |
+| 21  | Default model `gemini-flash-latest` alias + override `GEMINI_MODEL` | ✅        |
+| 22  | Đồng nhất "Phân tích nội dung": Home tile + segment Kiểm tra → cùng 1 màn | ✅  |
 
 ## Flow xử lý 1 lượt kiểm tra
 
@@ -62,12 +69,24 @@ input → │  LocalRiskSvc   │ → match? → trả ngay (cache 24h)
 
 ```env
 GEMINI_API_KEY=AIzaSy...
+# Optional override; default = gemini-flash-latest (alias auto-rotate)
+GEMINI_MODEL=gemini-2.5-flash
+
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_ANON_KEY=sb_publishable_... (hoặc legacy JWT eyJhbGc...)
+
+# Sentry crash reporting (optional). Empty → disabled.
+SENTRY_DSN=https://<key>@<region>.ingest.sentry.io/<project_id>
+SENTRY_ENV=production
 ```
 
 Thiếu `GEMINI_API_KEY` → AI button không gọi được, fallback message giải thích.
 Thiếu `SUPABASE_*` → blocklist offline rỗng (không còn fallback JSON).
+Thiếu `SENTRY_DSN` → Sentry tắt hẳn, app vẫn chạy bình thường.
+
+**Lưu ý region**: Gemini API trả `UnsupportedUserLocation` nếu request đi
+qua VPN / Private DNS / một số carrier mobile. Fix bằng cách tắt VPN hoặc
+chuyển sang WiFi nhà. Code đã hiện hint cụ thể trong UI khi gặp lỗi này.
 
 ## Setup Supabase
 
@@ -127,9 +146,9 @@ lib/
 ├── core/
 │   ├── constants/                  # AppColors, ApiConfig (có hasSupabase)
 │   └── theme/                      # AppTheme M3 + Public Sans/Inter
-├── data/models/                    # RiskLevel, ScamCheckResult (3 signal lists)
+├── data/models/                    # RiskLevel, ScamCheckResult, MediaAttachment
 ├── services/
-│   ├── gemini_service.dart         # Gemini Flash (3-axis prompt) — on-demand
+│   ├── gemini_service.dart         # Gemini Flash (3-axis prompt + multimodal) — on-demand
 │   ├── local_risk_service.dart     # Supabase known_risks + cache TTL 24h
 │   ├── remote_risk_service.dart    # aggregate Supabase scam_checks
 │   ├── history_service.dart        # remote upsert + local dedupe by id
@@ -148,7 +167,7 @@ lib/
 │   ├── blocklist/                  # browser danh sách offline NATIVE
 │   ├── known_risks/                # browse Supabase DB + FAB Thêm + swipe delete
 │   ├── notifications/              # inbox cuộc gọi đã chặn (id native-*)
-│   ├── content_analysis/           # free-text → AI flow
+│   ├── content_analysis/           # free-text + ảnh/video → AI multimodal flow
 │   └── history/                    # 100 lượt gần nhất
 └── shared/widgets/                 # RiskBadge, RiskGauge, ThreatRadarChart,
                                     # ScanningOverlay (Gemini-style), SkeletonBlock
@@ -171,7 +190,7 @@ assets/icon/
 └── icon_foreground.png             # adaptive foreground
 
 dist/                               # APK phân phối (gitignored)
-└── ScamGuard-v1.0.0-{arm64,arm32,x86_64}.apk
+└── ScamGuard-v1.0.2-{arm64,arm32,x86_64}.apk
 
 supabase/migrations/                # 0001-0006 SQL
 ```
@@ -231,16 +250,18 @@ Counter Bảo Vệ về 0/0. Cần bấm **Đồng bộ lại từ máy chủ** 
 
 | File | Size | Dùng cho |
 |---|---|---|
-| `ScamGuard-v1.0.0-arm64.apk` | ~19 MB | 99% điện thoại Android hiện tại |
-| `ScamGuard-v1.0.0-arm32.apk` | ~16 MB | Điện thoại cũ chip 32-bit |
-| `ScamGuard-v1.0.0-x86_64.apk` | ~20 MB | Emulator x86 |
+| `ScamGuard-v1.0.2-arm64.apk` | ~21 MB | 99% điện thoại Android hiện tại |
+| `ScamGuard-v1.0.2-arm32.apk` | ~18 MB | Điện thoại cũ chip 32-bit |
+| `ScamGuard-v1.0.2-x86_64.apk` | ~22 MB | Emulator x86 |
 
 Cài cho friends:
 
 ```bash
-adb install -r dist/ScamGuard-v1.0.0-arm64.apk
+adb install -r dist/ScamGuard-v1.0.2-arm64.apk
 # hoặc gửi file qua Zalo/Drive → user mở → Install anyway
 ```
+
+User đã có v1.0.0/v1.0.1 → cài đè được (cùng signing key, versionCode tăng).
 
 ⚠️ Play Protect sẽ cảnh báo "có thể gây rủi ro" do app yêu cầu
 `BIND_SCREENING_SERVICE` + sideload outside Play Store. Workaround: bấm

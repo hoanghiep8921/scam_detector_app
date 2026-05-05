@@ -25,10 +25,12 @@ chỉ điểm số), tiếng Việt phổ thông.
 |-------------------|--------------------------------------------------------|
 | Mobile            | Flutter 3.41+ (Dart 3.11+), Material 3 light           |
 | Native Android    | Kotlin (CallScreeningService, API 24+)                 |
-| AI                | `google_generative_ai` (Gemini Flash) — on-demand only |
+| AI                | `google_generative_ai` (Gemini Flash) — on-demand, multimodal |
+| Multimodal picker | `image_picker` 1.1+ (gallery / camera / video)         |
 | Cloud DB          | `supabase_flutter` 2.12+ (`scam_checks` + `known_risks`) |
 | State management  | `provider` (`ChangeNotifier`)                          |
 | Local storage     | `shared_preferences` (history cache + native blocklist + device_id + known_risks cache) |
+| Crash reporting   | `sentry_flutter` 8.9+ — disabled khi `SENTRY_DSN` rỗng |
 | Typography        | `google_fonts` (Public Sans + Inter)                   |
 | Cấu hình env      | `flutter_dotenv` (`.env`)                              |
 | Launcher icon     | `flutter_launcher_icons` (dev_dependency)              |
@@ -56,6 +58,10 @@ chỉ điểm số), tiếng Việt phổ thông.
 | 16  | Production: app icon mới + release keystore + split-per-ABI APK   | ✅          |
 | 17  | Tắt Auto Backup + permission INTERNET cho release build           | ✅          |
 | 18  | Loading Gemini-style (sparkles orbit + sweep gradient ring)       | ✅          |
+| 19  | Multimodal AI: text + ảnh + video qua Gemini (max 5 ảnh + 1 video, 18 MB) | ✅  |
+| 20  | Sentry crash + error reporting (auto-disable khi DSN rỗng)        | ✅          |
+| 21  | Đổi default model sang `gemini-flash-latest` alias + override qua `.env` | ✅   |
+| 22  | Đồng nhất "Phân tích nội dung": Home tile + segment tab Kiểm tra → cùng 1 màn | ✅ |
 
 Khi làm việc tiếp, nhớ cập nhật cả README.md lẫn bảng này.
 
@@ -68,9 +74,9 @@ lib/
 ├── core/
 │   ├── constants/                  # AppColors, ApiConfig (có hasSupabase)
 │   └── theme/                      # AppTheme M3 + Public Sans/Inter
-├── data/models/                    # RiskLevel, ScamCheckResult (3 signal lists)
+├── data/models/                    # RiskLevel, ScamCheckResult (3 signal lists), MediaAttachment
 ├── services/
-│   ├── gemini_service.dart         # Gemini Flash (3-axis prompt) — on-demand
+│   ├── gemini_service.dart         # Gemini Flash (3-axis prompt + multimodal) — on-demand
 │   ├── local_risk_service.dart     # Supabase known_risks + local SharedPreferences cache (TTL 24h)
 │   ├── remote_risk_service.dart    # aggregate Supabase scam_checks (consensus)
 │   ├── history_service.dart        # remote upsert + local cache, dedupe by id
@@ -89,7 +95,7 @@ lib/
 │   ├── blocklist/                  # browser danh sách offline NATIVE đang giám sát
 │   ├── known_risks/                # browse Supabase DB + FAB Thêm + swipe-to-delete
 │   ├── notifications/              # inbox cuộc gọi đã chặn (filter id native-*)
-│   ├── content_analysis/           # free-text → AI flow
+│   ├── content_analysis/           # free-text + ảnh/video → AI multimodal flow
 │   └── history/                    # 100 lượt gần nhất
 └── shared/widgets/                 # RiskBadge, FactorBar, RiskGauge,
                                     # ThreatRadarChart, ScanningOverlay (Gemini-style),
@@ -139,8 +145,14 @@ supabase/migrations/                # 0001-0004 (scam_checks); 0005-0006 (known_
   2. `RemoteRiskService.lookup()` — consensus từ `scam_checks` Supabase
      (theo `target` + `normalized_input`, weighted by distinct device_id).
   3. Trả về placeholder `RiskLevel.unknown` với CTA "Phân tích sâu bằng AI".
-- **AI is on-demand only**. Gemini KHÔNG được auto-call trong `check()`.
-  Chỉ gọi khi user bấm `analyzeWithAi(result)` trong `ResultScreen`.
+- **AI is on-demand only**. Gemini KHÔNG được auto-call trong `check()` cho
+  3 target structured (phone/bank/url). Chỉ gọi khi user bấm
+  `analyzeWithAi(result)` trong `ResultScreen`. Riêng `CheckTarget.content`
+  (free-text + ảnh/video) **luôn** đi thẳng Gemini vì không có lookup phù hợp.
+- **Multimodal**: `GeminiService.analyze` nhận `attachments: List<MediaAttachment>`
+  và build `Content.multi([TextPart(prompt), DataPart(mime, bytes), …])`. Cap
+  ở 18 MB / request (Gemini hard limit ~20 MB) — UI ở `ContentAnalysisScreen`
+  enforce: tối đa 5 ảnh + 1 video.
 - **Stub mode**: thiếu `GEMINI_API_KEY` → result giải thích cách config.
   Thiếu `SUPABASE_URL`/`SUPABASE_ANON_KEY` → blocklist offline rỗng (không
   còn fallback JSON file). Cố ý — buộc setup Supabase trước khi demo.
@@ -357,7 +369,10 @@ flutter pub run flutter_launcher_icons
 ### Distribution
 
 - 3 file `.apk` trong `dist/` (gitignored): arm64 / arm32 / x86_64.
-- ~16-20 MB / file (giảm 10× so với debug 201 MB).
+- ~18-22 MB / file (giảm 10× so với debug 201 MB).
+- Tên file `ScamGuard-v<semver>-<abi>.apk` (vd. `ScamGuard-v1.0.2-arm64.apk`).
+- Bump version khi distribute mới: pubspec `version: x.y.z+versionCode` —
+  versionCode tăng dần để Android cho update in-place.
 - Cài cho friends: gửi file qua Zalo / Drive → user bấm Install anyway
   (Play Protect cảnh báo vì sideload + sensitive perms — không tránh được
   trừ khi đăng Play Store Closed Testing).
@@ -370,6 +385,10 @@ flutter pub run flutter_launcher_icons
 <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+<!-- Multimodal AI (image/video picker). API 33+ dùng granular media. -->
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+<uses-permission android:name="android.permission.CAMERA" />
 ```
 
 `<application android:allowBackup="false" android:dataExtractionRules="...">`
@@ -388,6 +407,9 @@ flutter pub run flutter_launcher_icons
   hiện đã hint khi `Platform.isAndroid == false`.
 - **Offline outbox** cho check: hiện tại nếu Supabase fail → vẫn ghi local
   nhưng không retry sync sau.
+- **Region fallback cho Gemini**: nếu user dùng VPN / mạng không hỗ trợ
+  (UnsupportedUserLocation), giờ chỉ hiện message hướng dẫn tắt VPN /
+  đổi WiFi. Có thể proxy qua Cloud Function để bypass.
 - **Play Store Closed Testing** — bước tiếp theo để loại bỏ cảnh báo Play
   Protect cho beta tester (cần $25 1-time, upload AAB, Closed track).
 - **Ultrareview / security review** trước khi go-prod (RLS hiện quá lỏng).

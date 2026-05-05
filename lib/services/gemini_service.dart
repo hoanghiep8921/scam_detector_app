@@ -116,13 +116,16 @@ class GeminiService {
         msg.contains('user location') ||
         msg.contains('not supported')) {
       return (
+        
         summary:
-            'Tài khoản Gemini của bạn ở vùng chưa hỗ trợ model hoặc tính năng '
-            'multimodal. Đổi `GEMINI_MODEL=gemini-1.5-flash` trong .env hoặc '
-            'tạo lại API key từ Google account khác.',
+            'Mạng hiện tại của thiết bị đang bị Google chặn truy cập Gemini '
+            '(thường gặp khi dùng 4G/5G của một số nhà mạng VN, VPN, hoặc '
+            'Private DNS). Hãy chuyển sang WiFi và thử lại.',
         reasons: [
           'Lỗi: ${e.toString()}',
-          'Mẹo: gemini-1.5-flash hỗ trợ rộng hơn 2.5-flash tại VN.',
+          'Cách 1: Đổi WiFi (cùng mạng với máy chạy được là chắc).',
+          'Cách 2: Tắt VPN / Private DNS trong Settings → Network.',
+          'Cách 3: Đổi DNS WiFi sang 8.8.8.8 hoặc 1.1.1.1.',
         ],
       );
     }
