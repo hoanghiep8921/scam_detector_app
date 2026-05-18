@@ -4,10 +4,12 @@ import '../../data/models/media_attachment.dart';
 import '../../data/models/risk_level.dart';
 import '../../data/models/scam_check_result.dart';
 import '../../services/call_screening_service.dart';
+import '../../services/community_report_service.dart';
 import '../../services/gemini_service.dart';
 import '../../services/history_service.dart';
 import '../../services/local_risk_service.dart';
 import '../../services/remote_risk_service.dart';
+import '../../services/url_phishing_analyzer.dart';
 
 /// Scam check flow:
 ///
@@ -24,15 +26,21 @@ class ScamCheckProvider extends ChangeNotifier {
     HistoryService? history,
     LocalRiskService? localRisk,
     RemoteRiskService? remoteRisk,
+    UrlPhishingAnalyzer? urlAnalyzer,
+    CommunityReportService? communityReport,
   })  : _gemini = gemini ?? GeminiService(),
         _history = history ?? HistoryService(),
         _localRisk = localRisk ?? LocalRiskService(),
-        _remoteRisk = remoteRisk ?? RemoteRiskService();
+        _remoteRisk = remoteRisk ?? RemoteRiskService(),
+        _urlAnalyzer = urlAnalyzer ?? UrlPhishingAnalyzer(),
+        _communityReport = communityReport ?? CommunityReportService();
 
   final GeminiService _gemini;
   final HistoryService _history;
   final LocalRiskService _localRisk;
   final RemoteRiskService _remoteRisk;
+  final UrlPhishingAnalyzer _urlAnalyzer;
+  final CommunityReportService _communityReport;
   final _uuid = const Uuid();
 
   bool _loading = false;
@@ -98,9 +106,23 @@ class ScamCheckProvider extends ChangeNotifier {
                 resultId: id,
               )
             : null;
-        // 3. Fall through — no data either side. Return placeholder; AI is opt-in.
+        // 3. URL phishing analysis — run local pattern checks for URLs.
+        final urlResult = target == CheckTarget.url
+            ? _runUrlAnalysis(trimmed, id)
+            : null;
+        // 4. Community reports — check if other users flagged this.
+        final communityReport = (local == null && remote == null && urlResult == null)
+            ? await _communityReport.lookup(
+                target: target,
+                input: trimmed,
+                resultId: id,
+              )
+            : null;
+        // 5. Fall through — no data either side. Return placeholder; AI is opt-in.
         result = local ??
             remote ??
+            urlResult ??
+            communityReport?.result ??
             ScamCheckResult(
               id: id,
               target: target,
@@ -129,6 +151,29 @@ class ScamCheckProvider extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  ScamCheckResult? _runUrlAnalysis(String input, String resultId) {
+    final signals = _urlAnalyzer.analyze(input);
+    if (signals.isEmpty) return null;
+    return _urlAnalyzer.resultFromSignals(
+      input: input,
+      resultId: resultId,
+      signals: signals,
+    );
+  }
+
+  /// Submit a community report. Returns true on success.
+  Future<bool> submitCommunityReport({
+    required CheckTarget target,
+    required String value,
+    required String description,
+  }) async {
+    return _communityReport.submit(
+      target: target,
+      value: value,
+      description: description,
+    );
   }
 
   /// On-demand AI behavioural analysis. Called from the result screen.

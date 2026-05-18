@@ -75,6 +75,10 @@ class ScamCheckResult {
   /// scarcity, reciprocity, commitment, social proof, liking) detected.
   final List<String> socialTactics;
 
+  /// URL phishing highlights — maps problematic fragments to severity (0–100).
+  /// e.g. {'http': 40, 'youtobe': 85, '.tk': 60}
+  final Map<String, int> urlHighlights;
+
   final DateTime checkedAt;
 
   const ScamCheckResult({
@@ -89,6 +93,7 @@ class ScamCheckResult {
     this.linguisticSignals = const [],
     this.cyberSignals = const [],
     this.socialTactics = const [],
+    this.urlHighlights = const {},
     required this.checkedAt,
   });
 
@@ -102,6 +107,7 @@ class ScamCheckResult {
     List<String>? linguisticSignals,
     List<String>? cyberSignals,
     List<String>? socialTactics,
+    Map<String, int>? urlHighlights,
     DateTime? checkedAt,
   }) =>
       ScamCheckResult(
@@ -116,6 +122,7 @@ class ScamCheckResult {
         linguisticSignals: linguisticSignals ?? this.linguisticSignals,
         cyberSignals: cyberSignals ?? this.cyberSignals,
         socialTactics: socialTactics ?? this.socialTactics,
+        urlHighlights: urlHighlights ?? this.urlHighlights,
         checkedAt: checkedAt ?? this.checkedAt,
       );
 
@@ -131,6 +138,7 @@ class ScamCheckResult {
         'linguisticSignals': linguisticSignals,
         'cyberSignals': cyberSignals,
         'socialTactics': socialTactics,
+        'urlHighlights': urlHighlights,
         'checkedAt': checkedAt.toIso8601String(),
       };
 
@@ -154,6 +162,7 @@ class ScamCheckResult {
       linguisticSignals: readList('linguisticSignals'),
       cyberSignals: readList('cyberSignals'),
       socialTactics: readList('socialTactics'),
+      urlHighlights: (json['urlHighlights'] as Map?)?.cast<String, int>() ?? const {},
       checkedAt: DateTime.tryParse(json['checkedAt'] as String? ?? '') ??
           DateTime.now(),
     );

@@ -330,6 +330,17 @@ class LocalRiskService {
     final trimmed = input.trim();
     switch (target) {
       case CheckTarget.phone:
+        // Strip all non-digits, then canonicalize to Vietnamese domestic form
+        // (leading 0) used as the single source of truth in known_risks:
+        //   +84 XX…  →  0XX…  (11 digits: 84 + 9-digit subscriber → 0 + 9)
+        //   +84 0XX… →  0XX…  (12 digits: 84 + extra 0 + 9-digit subscriber)
+        var digits = trimmed.replaceAll(RegExp(r'\D'), '');
+        if (digits.startsWith('84') && digits.length == 11) {
+          digits = '0${digits.substring(2)}';
+        } else if (digits.startsWith('840') && digits.length == 12) {
+          digits = '0${digits.substring(3)}';
+        }
+        return digits;
       case CheckTarget.bankAccount:
         return trimmed.replaceAll(RegExp(r'[\s\-()]'), '');
       case CheckTarget.url:

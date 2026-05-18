@@ -6,8 +6,41 @@ void main() {
   group('LocalRiskService.normalize', () {
     test('phone numbers strip spaces, dashes and parentheses', () {
       expect(
-        LocalRiskService.normalize(CheckTarget.phone, '(088) 8888-888'),
+        LocalRiskService.normalize(CheckTarget.phone, '(088) 888-8888'),
         '0888888888',
+      );
+    });
+
+    test('phone numbers starting with +84 normalize to 0-form', () {
+      // +84 888 888 888 → 11 digits (country code + 9 subscriber digits)
+      // → canonical domestic: 0888888888
+      expect(
+        LocalRiskService.normalize(CheckTarget.phone, '+84 888 888 888'),
+        '0888888888',
+      );
+    });
+
+    test('phone numbers starting with +840 (with leading 0) normalize to 0-form', () {
+      // +84 088 888 8888 → 12 digits (country code + extra 0 + 9 subscriber)
+      // → canonical domestic: 0888888888
+      expect(
+        LocalRiskService.normalize(CheckTarget.phone, '+84 088 888 8888'),
+        '0888888888',
+      );
+    });
+
+    test('plain 0-form phone numbers unchanged', () {
+      expect(
+        LocalRiskService.normalize(CheckTarget.phone, '0888888888'),
+        '0888888888',
+      );
+    });
+
+    test('non-VN country codes keep digits-only (no conversion)', () {
+      // +1 212 555 1234 → US number, stays as digits
+      expect(
+        LocalRiskService.normalize(CheckTarget.phone, '+1 212 555 1234'),
+        '12125551234',
       );
     });
 

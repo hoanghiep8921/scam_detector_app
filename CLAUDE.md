@@ -73,16 +73,20 @@ lib/
 ├── app.dart                        # MultiProvider (ScamCheck + CallScreeningRole)
 ├── core/
 │   ├── constants/                  # AppColors, ApiConfig (có hasSupabase)
-│   └── theme/                      # AppTheme M3 + Public Sans/Inter
+│   ├── theme/                      # AppTheme M3 light + dark + Public Sans/Inter
+│   └── i18n/                       # AppStrings map (vi/en) + StringsX extension
 ├── data/models/                    # RiskLevel, ScamCheckResult (3 signal lists), MediaAttachment
 ├── services/
 │   ├── gemini_service.dart         # Gemini Flash (3-axis prompt + multimodal) — on-demand
 │   ├── local_risk_service.dart     # Supabase known_risks + local SharedPreferences cache (TTL 24h)
 │   ├── remote_risk_service.dart    # aggregate Supabase scam_checks (consensus)
+│   ├── url_phishing_analyzer.dart  # 6-rule URL phishing detector (HTTPS, TLD, typo, brand, homoglyph, subdomains)
 │   ├── history_service.dart        # remote upsert + local cache, dedupe by id
 │   ├── device_id_service.dart      # random UUID lưu local 1 lần đầu, có reset()
 │   ├── call_screening_service.dart # MethodChannel: role / sync / get / add / remove / clear
-│   └── data_reset_service.dart     # orchestrate clear-all (native + cache + history + device_id)
+│   ├── data_reset_service.dart     # orchestrate clear-all (native + cache + history + device_id)
+│   ├── settings_service.dart       # SharedPreferences: theme mode + locale (vi/en) + preventMinimize
+│   └── community_report_service.dart # Supabase community_reports: submit + lookup
 ├── features/
 │   ├── main_shell.dart             # bottom nav 4 tab + listener cuộc gọi đến + drain queue
 │   ├── home/                       # dashboard: hero (shared role) + stats + tiles + activity + bell
@@ -96,6 +100,7 @@ lib/
 │   ├── known_risks/                # browse Supabase DB + FAB Thêm + swipe-to-delete
 │   ├── notifications/              # inbox cuộc gọi đã chặn (filter id native-*)
 │   ├── content_analysis/           # free-text + ảnh/video → AI multimodal flow
+│   ├── settings/                   # theme dark/light + language selector + about
 │   └── history/                    # 100 lượt gần nhất
 └── shared/widgets/                 # RiskBadge, FactorBar, RiskGauge,
                                     # ThreatRadarChart, ScanningOverlay (Gemini-style),
@@ -144,7 +149,14 @@ supabase/migrations/                # 0001-0004 (scam_checks); 0005-0006 (known_
      cache local 24h. Lookup là exact match `(type, normalized_value)`.
   2. `RemoteRiskService.lookup()` — consensus từ `scam_checks` Supabase
      (theo `target` + `normalized_input`, weighted by distinct device_id).
-  3. Trả về placeholder `RiskLevel.unknown` với CTA "Phân tích sâu bằng AI".
+  3. `UrlPhishingAnalyzer.analyze()` — 6-rule phishing detector cho URL
+     (missing HTTPS, suspicious TLD, brand impersonation, typo-squatting,
+     homoglyph, excessive subdomains). Trả về `urlHighlights` map để
+     ResultScreen highlight các đoạn URL bị vấn đề.
+  4. `CommunityReportService.lookup()` — kiểm tra `community_reports` table
+     xem có người dùng nào báo cáo đối tượng này chưa. Escalate score theo
+     số lượng báo cáo (50 + N*5).
+  5. Trả về placeholder `RiskLevel.unknown` với CTA "Phân tích sâu bằng AI".
 - **AI is on-demand only**. Gemini KHÔNG được auto-call trong `check()` cho
   3 target structured (phone/bank/url). Chỉ gọi khi user bấm
   `analyzeWithAi(result)` trong `ResultScreen`. Riêng `CheckTarget.content`
@@ -215,6 +227,14 @@ từ Supabase row (qua column `linguistic_signals` / `cyber_signals` / `social_t
    - Trigger `known_risks_touch_updated_at` tự cập nhật `updated_at`.
    - Seed sẵn 123 entries (57 phone, 26 bank, 40 url) trong migration 0005.
 
+3. **`public.community_reports`** (user-submitted scam reports, migration 0008)
+   - 7 cột: id, device_id, target, reported_value, normalized_value,
+     description, created_at.
+   - `UNIQUE (device_id, normalized_value)` — mỗi device báo cáo 1 entry
+     duy nhất cho mỗi đối tượng.
+   - RLS: anon read/insert = true. Tighten before prod.
+   - Dùng làm tín hiệu phụ trong check flow — escalate score theo report count.
+
 ### Migration order
 
 ```
@@ -224,6 +244,8 @@ supabase/migrations/0003_multi_axis_signals.sql # 3 jsonb axis cols
 supabase/migrations/0004_content_target.sql     # accept target='content'
 supabase/migrations/0005_known_risks.sql        # NEW table + RLS + 123 seed rows
 supabase/migrations/0006_known_risks_delete.sql # add anon delete policy
+supabase/migrations/0007_canonicalize_vn_phone.sql  # +84X… ↔ 0X… canonical form
+supabase/migrations/0008_community_reports.sql      # community scam reports table + RLS
 ```
 
 Run trong dashboard SQL Editor theo thứ tự. Idempotent (`if not exists` /
@@ -238,6 +260,9 @@ Run trong dashboard SQL Editor theo thứ tự. Idempotent (`if not exists` /
 - **normalized_value**/**normalized_input** quan trọng cho lookup đa định
   dạng — dùng `LocalRiskService.normalize(target, input)` (SQL backfill
   cũng dùng cùng pattern). Khi sửa `normalize`, sync luôn migration regex.
+  - **Phone**: canonical về dạng `0XXXXXXXXX` (VN domestic).
+    `+84 888 888 888` → `0888888888` · `+84 088 888 8888` → `0888888888`.
+    Non-VN country codes giữ nguyên digits-only (không convert).
 
 ## 8. CallScreeningService (Android)
 

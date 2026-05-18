@@ -1,7 +1,7 @@
 name: scam_detector
 description: "AI-powered scam detection app for phone numbers, bank accounts, and URLs."
 publish_to: 'none'
-version: 1.0.2+3
+version: 1.0.4+5
 
 environment:
   sdk: ^3.11.5

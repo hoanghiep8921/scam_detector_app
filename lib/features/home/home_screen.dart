@@ -12,6 +12,7 @@ import '../notifications/notifications_screen.dart';
 import '../result/result_screen.dart';
 import '../scam_check/scam_check_provider.dart';
 import '../scam_check/scam_check_screen.dart';
+import '../settings/settings_screen.dart';
 
 /// Home dashboard — adapted from the Stitch "Home Dashboard - Modern v2"
 /// design. Sections (top → bottom):
@@ -32,6 +33,7 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Scam Guard'),
         actions: const [
           _NotificationsBell(),
+          _SettingsButton(),
           SizedBox(width: 8),
         ],
       ),
@@ -157,6 +159,26 @@ class _NotificationsBellState extends State<_NotificationsBell> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Settings gear icon next to the notification bell.
+class _SettingsButton extends StatelessWidget {
+  const _SettingsButton();
+
+  void _open(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
+      onPressed: () => _open(context),
+      tooltip: 'Cài đặt',
     );
   }
 }

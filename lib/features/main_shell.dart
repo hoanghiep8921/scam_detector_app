@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
 import '../data/models/risk_level.dart';
 import '../data/models/scam_check_result.dart';
 import '../services/call_screening_service.dart';
 import '../services/local_risk_service.dart';
+import '../services/settings_service.dart';
 import 'call_screening/call_screening_screen.dart';
 import 'history/history_screen.dart';
 import 'home/home_screen.dart';
@@ -106,7 +108,26 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
+    final preventMinimize = context.watch<SettingsService>().preventMinimize;
+    return PopScope(
+      canPop: !preventMinimize,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          // User pressed back at root tab level — try to navigate back
+          // within the app first.
+          final navigator = _navKey.currentState;
+          if (navigator != null && navigator.canPop()) {
+            navigator.pop();
+          } else if (navigator != null && _index != 0) {
+            // No inner route to pop — go back to home tab.
+            setState(() => _index = 0);
+          } else {
+            // At home tab with no inner route — minimize as usual.
+            SystemNavigator.pop();
+          }
+        }
+      },
+      child: Navigator(
       key: _navKey,
       onGenerateRoute: (settings) => MaterialPageRoute(
         builder: (_) => Scaffold(
@@ -142,6 +163,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           ),
         ),
       ),
+    ),
     );
   }
 }

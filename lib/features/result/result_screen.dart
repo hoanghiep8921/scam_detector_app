@@ -151,6 +151,17 @@ class _ResultScreenState extends State<ResultScreen> {
                   const SizedBox(height: 16),
                 ],
 
+                // URL phishing highlights — shows the URL with suspicious
+                // fragments highlighted in red/orange.
+                if (_result.target == CheckTarget.url &&
+                    _result.urlHighlights.isNotEmpty) ...[
+                  _UrlHighlightCard(
+                    url: _result.input,
+                    highlights: _result.urlHighlights,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 // Multi-axis behavioural analysis (linguistics / cybersecurity /
                 // social psychology). Hidden when no signals from any axis.
                 if (_result.linguisticSignals.isNotEmpty ||
@@ -617,6 +628,192 @@ class _ReasonsCard extends StatelessWidget {
                 ),
               )
               .toList(),
+        ),
+      ),
+    );
+  }
+}
+
+/// Highlights suspicious URL fragments inline with color-coded severity.
+class _UrlHighlightCard extends StatelessWidget {
+  const _UrlHighlightCard({
+    required this.url,
+    required this.highlights,
+  });
+
+  final String url;
+  final Map<String, int> highlights; // fragment → severity
+
+  @override
+  Widget build(BuildContext context) {
+    final spans = _buildSpans();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.warning_amber_rounded,
+                    color: AppColors.riskHigh, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Cảnh báo URL',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Wrap(
+                children: spans,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildSpans() {
+    return _buildOrderedSpans();
+  }
+
+  List<Widget> _buildOrderedSpans() {
+    final lowerUrl = url.toLowerCase();
+    var cursor = 0;
+
+    // Find all highlight matches with their positions.
+    final matches = <_Segment>[];
+    for (final entry in highlights.entries) {
+      final fragment = entry.key.toLowerCase();
+      var start = 0;
+      while (true) {
+        final idx = lowerUrl.indexOf(fragment, start);
+        if (idx == -1) break;
+        matches.add(_Segment(
+          start: idx,
+          end: idx + fragment.length,
+          text: url.substring(idx, idx + fragment.length),
+          severity: entry.value,
+        ));
+        start = idx + fragment.length;
+      }
+    }
+
+    // Merge overlapping — keep highest severity.
+    final merged = _mergeOverlapping(matches);
+
+    // Sort by position.
+    merged.sort((a, b) => a.start.compareTo(b.start));
+
+    final widgets = <Widget>[];
+    for (final seg in merged) {
+      // Add plain text before this segment.
+      if (seg.start > cursor) {
+        widgets.add(Text(
+          url.substring(cursor, seg.start),
+          style: const TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 14,
+            color: AppColors.textPrimary,
+          ),
+        ));
+      }
+      widgets.add(_HighlightChip(
+        text: seg.text,
+        severity: seg.severity,
+      ));
+      cursor = seg.end;
+    }
+
+    // Remaining text.
+    if (cursor < url.length) {
+      widgets.add(Text(
+        url.substring(cursor),
+        style: const TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 14,
+          color: AppColors.textPrimary,
+        ),
+      ));
+    }
+
+    return widgets;
+  }
+
+  List<_Segment> _mergeOverlapping(List<_Segment> matches) {
+    if (matches.isEmpty) return [];
+    final sorted = List.of(matches)..sort((a, b) => a.start.compareTo(b.start));
+    final result = <_Segment>[sorted.first];
+    for (var i = 1; i < sorted.length; i++) {
+      final prev = result.last;
+      final curr = sorted[i];
+      if (curr.start < prev.end) {
+        // Overlapping — merge, keep higher severity.
+        result[result.length - 1] = _Segment(
+          start: prev.start,
+          end: curr.end > prev.end ? curr.end : prev.end,
+          text: url.substring(prev.start, curr.end > prev.end ? curr.end : prev.end),
+          severity: curr.severity > prev.severity ? curr.severity : prev.severity,
+        );
+      } else {
+        result.add(curr);
+      }
+    }
+    return result;
+  }
+}
+
+class _Segment {
+  const _Segment({
+    required this.start,
+    required this.end,
+    required this.text,
+    required this.severity,
+  });
+  final int start;
+  final int end;
+  final String text;
+  final int severity;
+}
+
+class _HighlightChip extends StatelessWidget {
+  const _HighlightChip({required this.text, required this.severity});
+  final String text;
+  final int severity;
+
+  Color get _color {
+    if (severity >= 70) return AppColors.riskHigh;
+    if (severity >= 40) return AppColors.riskMedium;
+    return AppColors.riskUnknown;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: _color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: _color.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: _color,
         ),
       ),
     );

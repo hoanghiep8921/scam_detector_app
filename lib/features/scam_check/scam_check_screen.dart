@@ -7,6 +7,7 @@ import '../../shared/widgets/scanning_overlay.dart';
 import '../content_analysis/content_analysis_screen.dart';
 import '../history/history_screen.dart';
 import '../result/result_screen.dart';
+import '../settings/settings_screen.dart';
 import 'scam_check_provider.dart';
 
 /// Unified manual check screen — segmented control switches between phone /
@@ -80,10 +81,12 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scam Guard'),
-        actions: const [
+        actions: [
           IconButton(
-            icon: Icon(Icons.settings_outlined, color: AppColors.textSecondary),
-            onPressed: null,
+            icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
             tooltip: 'Cài đặt',
           ),
         ],
@@ -92,7 +95,7 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
         child: Stack(
           children: [
             ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               children: [
                 _SegmentedTargetSelector(
                   target: _target,
@@ -178,6 +181,8 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                 ),
                 const SizedBox(height: 24),
                 const _DetectionEngineCard(),
+                const SizedBox(height: 16),
+                _CommunityReportCard(target: _target),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -442,6 +447,191 @@ class _SecondaryTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Card that lets users report a phone number / URL / bank account as scam.
+/// Visible for phone, bank, and URL targets; shows a short form in a dialog.
+class _CommunityReportCard extends StatelessWidget {
+  const _CommunityReportCard({required this.target});
+  final CheckTarget target;
+
+  void _openDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => _ReportDialog(target: target),
+    );
+  }
+
+  String get _label {
+    switch (target) {
+      case CheckTarget.phone:
+        return 'Số điện thoại';
+      case CheckTarget.bankAccount:
+        return 'Tài khoản ngân hàng';
+      case CheckTarget.url:
+        return 'Đường dẫn';
+      case CheckTarget.content:
+        return ''; // content has no report card
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (target == CheckTarget.content) return const SizedBox.shrink();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.riskMedium.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.flag_outlined, color: AppColors.riskMedium),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Báo cáo lừa đảo',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Giúp cộng đồng — báo cáo $_label giả mạo hoặc lừa đảo.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton(
+              onPressed: () => _openDialog(context),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 36),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              child: const Text('Báo cáo'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Dialog for submitting a community scam report.
+class _ReportDialog extends StatefulWidget {
+  const _ReportDialog({required this.target});
+  final CheckTarget target;
+
+  @override
+  State<_ReportDialog> createState() => _ReportDialogState();
+}
+
+class _ReportDialogState extends State<_ReportDialog> {
+  final _valueController = TextEditingController();
+  final _descController = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _valueController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_valueController.text.trim().isEmpty) return;
+    setState(() => _submitting = true);
+    final ok = await context.read<ScamCheckProvider>().submitCommunityReport(
+          target: widget.target,
+          value: _valueController.text.trim(),
+          description: _descController.text.trim(),
+        );
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Đã gửi báo cáo. Cảm ơn bạn đóng góp cho cộng đồng!'
+              : 'Gửi báo cáo thất bại. Vui lòng thử lại.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (widget.target) {
+      CheckTarget.phone => 'số điện thoại',
+      CheckTarget.bankAccount => 'số tài khoản',
+      CheckTarget.url => 'đường dẫn',
+      CheckTarget.content => 'nội dung',
+    };
+    return AlertDialog(
+      title: const Text('Báo cáo lừa đảo'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Nhập $label bạn muốn báo cáo:',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _valueController,
+            decoration: InputDecoration(
+              hintText: switch (widget.target) {
+                CheckTarget.phone => '+84 9XX XXX XXX',
+                CheckTarget.bankAccount => '1903 5762 8810',
+                CheckTarget.url => 'vietcombank-online.xyz',
+                CheckTarget.content => '',
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Mô tả ngắn (tuỳ chọn):',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _descController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'VD: Giả danh ngân hàng yêu cầu chuyển tiền...',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _submitting ? null : () => Navigator.of(context).pop(),
+          child: const Text('Huỷ'),
+        ),
+        FilledButton(
+          onPressed: _submitting ? null : _submit,
+          child: _submitting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Gửi báo cáo'),
+        ),
+      ],
     );
   }
 }
