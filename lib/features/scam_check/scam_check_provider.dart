@@ -64,6 +64,7 @@ class ScamCheckProvider extends ChangeNotifier {
     required CheckTarget target,
     required String input,
     List<MediaAttachment> attachments = const [],
+    String? bankCode,
   }) async {
     final trimmed = input.trim();
     // For free-text content, allow empty input when at least one media file
@@ -97,6 +98,7 @@ class ScamCheckProvider extends ChangeNotifier {
           target: target,
           input: trimmed,
           resultId: id,
+          bankCode: bankCode,
         );
         // 2. Supabase aggregate — consensus from community history.
         final remote = local == null
@@ -104,6 +106,7 @@ class ScamCheckProvider extends ChangeNotifier {
                 target: target,
                 input: trimmed,
                 resultId: id,
+                bankCode: bankCode,
               )
             : null;
         // 3. URL phishing analysis — run local pattern checks for URLs.
@@ -137,6 +140,7 @@ class ScamCheckProvider extends ChangeNotifier {
                 'Bấm "Phân tích sâu bằng AI" để Gemini phân tích hành vi.',
               ],
               psychological: const PsychologicalFactors(),
+              bankCode: bankCode,
               checkedAt: DateTime.now(),
             );
       }
@@ -188,6 +192,7 @@ class ScamCheckProvider extends ChangeNotifier {
         target: original.target,
         input: original.input,
         resultId: original.id,
+        bankCode: original.bankCode,
       );
       // Preserve the original id so the row in history is updated, not duplicated.
       _lastResult = aiResult;

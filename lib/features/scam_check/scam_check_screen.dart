@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../data/models/vietnamese_bank.dart';
 import '../../shared/widgets/scanning_overlay.dart';
 import '../content_analysis/content_analysis_screen.dart';
 import '../history/history_screen.dart';
@@ -23,6 +24,7 @@ class ScamCheckScreen extends StatefulWidget {
 
 class _ScamCheckScreenState extends State<ScamCheckScreen> {
   late CheckTarget _target = widget.target;
+  VietnameseBank? _selectedBank;
   final _controllers = {
     for (final t in CheckTarget.values) t: TextEditingController(),
   };
@@ -47,8 +49,16 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
           return 'Số điện thoại không hợp lệ';
         }
       case CheckTarget.bankAccount:
-        if (!RegExp(r'^[\d\-\s]{6,30}$').hasMatch(v)) {
+        final digits = v.replaceAll(RegExp(r'[\s\-]'), '');
+        if (!RegExp(r'^\d{6,30}$').hasMatch(digits)) {
           return 'Số tài khoản không hợp lệ';
+        }
+        if (_selectedBank != null && _selectedBank != VietnameseBank.other) {
+          if (digits.length < _selectedBank!.minDigits ||
+              digits.length > _selectedBank!.maxDigits) {
+            return 'Số tài khoản ${_selectedBank!.shortName} thường có '
+                '${_selectedBank!.minDigits}–${_selectedBank!.maxDigits} chữ số';
+          }
         }
       case CheckTarget.url:
         if (!RegExp(r'\.[a-z]{2,}', caseSensitive: false).hasMatch(v)) {
@@ -65,9 +75,13 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
+    final bankCode = _target == CheckTarget.bankAccount
+        ? _selectedBank?.code
+        : null;
     final result = await context.read<ScamCheckProvider>().check(
           target: _target,
           input: _controller.text,
+          bankCode: bankCode,
         );
     if (!mounted || result == null) return;
     Navigator.of(context).push(
@@ -108,7 +122,10 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                       );
                       return;
                     }
-                    setState(() => _target = t);
+                    setState(() {
+                      _target = t;
+                      _selectedBank = null;
+                    });
                     _formKey.currentState?.reset();
                   },
                 ),
@@ -131,6 +148,13 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                   ),
                 ),
                 const SizedBox(height: 28),
+                if (_target == CheckTarget.bankAccount)
+                  _BankSelector(
+                    selectedBank: _selectedBank,
+                    onChanged: (bank) =>
+                        setState(() => _selectedBank = bank),
+                  ),
+                if (_target == CheckTarget.bankAccount) const SizedBox(height: 16),
                 Form(
                   key: _formKey,
                   child: TextFormField(
@@ -158,7 +182,9 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                         ],
                     },
                     decoration: InputDecoration(
-                      hintText: _hintFor(_target),
+                      hintText: _target == CheckTarget.bankAccount
+                          ? _bankHint(_selectedBank)
+                          : _hintFor(_target),
                       hintMaxLines: _target == CheckTarget.content ? 4 : 1,
                       hintStyle: _target == CheckTarget.content
                           ? const TextStyle(fontSize: 13, height: 1.45)
@@ -228,6 +254,15 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
         CheckTarget.content =>
           'Dán SMS, email hoặc mô tả tình huống — AI phân tích đa góc nhìn.',
       };
+
+  static String _bankHint(VietnameseBank? bank) {
+    if (bank == null) return 'VD: 1903 5762 8810';
+    if (bank == VietnameseBank.other) return 'Nhập số tài khoản (6–30 chữ số)';
+    final range = bank.minDigits == bank.maxDigits
+        ? '${bank.minDigits} chữ số'
+        : '${bank.minDigits}–${bank.maxDigits} chữ số';
+    return 'VD: ${bank.shortName} — $range';
+  }
 
   static String _hintFor(CheckTarget t) => switch (t) {
         CheckTarget.phone => '+84 9XX XXX XXX',
@@ -632,6 +667,42 @@ class _ReportDialogState extends State<_ReportDialog> {
               : const Text('Gửi báo cáo'),
         ),
       ],
+    );
+  }
+}
+
+/// Dropdown for selecting a Vietnamese bank when checking a bank account.
+class _BankSelector extends StatelessWidget {
+  const _BankSelector({
+    required this.selectedBank,
+    required this.onChanged,
+  });
+
+  final VietnameseBank? selectedBank;
+  final ValueChanged<VietnameseBank?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<VietnameseBank>(
+      initialValue: selectedBank,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Ngân hàng',
+        hintText: 'Chọn ngân hàng của số tài khoản',
+        prefixIcon: const Icon(Icons.account_balance_outlined),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      items: [
+        ...VietnameseBanks.all.map(
+          (b) => DropdownMenuItem(
+            value: b,
+            child: Text(b.name),
+          ),
+        ),
+      ],
+      onChanged: onChanged,
     );
   }
 }

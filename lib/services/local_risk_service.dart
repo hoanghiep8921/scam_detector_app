@@ -99,22 +99,42 @@ class LocalRiskService {
   }
 
   /// Returns a [ScamCheckResult] if the input is in the blocklist, else null.
+  ///
+  /// When [bankCode] is provided (for bankAccount checks), tries to match
+  /// `(type, bankCode, normalized_value)` first, then falls back to
+  /// `(type, normalized_value)` for broader matching.
   Future<ScamCheckResult?> lookup({
     required CheckTarget target,
     required String input,
     required String resultId,
+    String? bankCode,
   }) async {
     if (target == CheckTarget.content) return null;
     await ensureLoaded();
+
+    // Try exact match with bank code first (if provided and for bank accounts).
+    if (bankCode != null && bankCode.isNotEmpty && target == CheckTarget.bankAccount) {
+      final bankKey = _makeKeyWithBank(target, bankCode, _normalize(target, input));
+      final bankEntry = _byKey[bankKey];
+      if (bankEntry != null) {
+        return _entryToResult(bankEntry, resultId);
+      }
+    }
+
+    // Fallback: match by type + normalized value only.
     final entry = _byKey[_makeKey(target, _normalize(target, input))];
     if (entry == null) return null;
+    return _entryToResult(entry, resultId);
+  }
+
+  ScamCheckResult? _entryToResult(_Entry entry, String resultId) {
     final firstReason = entry.reasons.isEmpty
         ? '(Tra cứu cộng đồng) Đối tượng có trong cơ sở dữ liệu lừa đảo.'
         : '(Tra cứu cộng đồng) ${entry.reasons.first}';
     return ScamCheckResult(
       id: resultId,
-      target: target,
-      input: input,
+      target: entry.target,
+      input: entry.displayValue.isNotEmpty ? entry.displayValue : entry.value,
       riskLevel: entry.riskLevel,
       riskScore: entry.score,
       summary: entry.summary,
@@ -123,6 +143,7 @@ class LocalRiskService {
       linguisticSignals: entry.linguisticSignals,
       cyberSignals: entry.cyberSignals,
       socialTactics: entry.socialTactics,
+      bankCode: entry.bankCode,
       checkedAt: DateTime.now(),
     );
   }
@@ -175,6 +196,7 @@ class LocalRiskService {
     List<String> linguistic = const [],
     List<String> cyber = const [],
     List<String> social = const [],
+    String? bankCode,
   }) async {
     final client = _client;
     if (client == null) {
@@ -195,6 +217,7 @@ class LocalRiskService {
           'linguistic_signals': linguistic,
           'cyber_signals': cyber,
           'social_tactics': social,
+          if (bankCode != null) 'bank_code': bankCode,
         },
         onConflict: 'type,normalized_value',
       );
@@ -243,6 +266,10 @@ class LocalRiskService {
       ..addAll(entries);
     for (final e in entries) {
       _byKey[_makeKey(e.target, e.value)] = e;
+      // Also index with bankCode for precise bank-specific lookup.
+      if (e.bankCode != null && e.bankCode!.isNotEmpty) {
+        _byKey[_makeKeyWithBank(e.target, e.bankCode!, e.value)] = e;
+      }
     }
   }
 
@@ -288,7 +315,7 @@ class LocalRiskService {
           .from(_table)
           .select(
             'type, value, normalized_value, risk_level, score, summary, '
-            'reasons, psychological, linguistic_signals, cyber_signals, social_tactics, updated_at',
+            'reasons, psychological, linguistic_signals, cyber_signals, social_tactics, bank_code, updated_at',
           )
           .order('risk_level')
           .limit(5000);
@@ -320,6 +347,9 @@ class LocalRiskService {
 
   String _makeKey(CheckTarget target, String value) =>
       '${target.name}::${value.toLowerCase()}';
+
+  String _makeKeyWithBank(CheckTarget target, String bankCode, String value) =>
+      '${target.name}::$bankCode::${value.toLowerCase()}';
 
   /// Public for tests. Strips formatting from phone/account numbers and
   /// extracts the host from URLs so that input variants match.
@@ -368,6 +398,7 @@ class KnownRisk {
     required this.linguisticSignals,
     required this.cyberSignals,
     required this.socialTactics,
+    this.bankCode,
   });
 
   final CheckTarget target;
@@ -380,6 +411,7 @@ class KnownRisk {
   final List<String> linguisticSignals;
   final List<String> cyberSignals;
   final List<String> socialTactics;
+  final String? bankCode;
 
   /// Build a [ScamCheckResult] view of this row so the existing ResultScreen
   /// can render it without changes.
@@ -395,6 +427,7 @@ class KnownRisk {
         linguisticSignals: linguisticSignals,
         cyberSignals: cyberSignals,
         socialTactics: socialTactics,
+        bankCode: bankCode,
         checkedAt: DateTime.now(),
       );
 }
@@ -411,6 +444,7 @@ class _Entry {
   final List<String> linguisticSignals;
   final List<String> cyberSignals;
   final List<String> socialTactics;
+  final String? bankCode;
 
   _Entry({
     required this.target,
@@ -424,6 +458,7 @@ class _Entry {
     this.linguisticSignals = const [],
     this.cyberSignals = const [],
     this.socialTactics = const [],
+    this.bankCode,
   });
 
   factory _Entry.fromSupabaseRow(Map<String, dynamic> row) {
@@ -454,6 +489,7 @@ class _Entry {
       linguisticSignals: readList(row['linguistic_signals']),
       cyberSignals: readList(row['cyber_signals']),
       socialTactics: readList(row['social_tactics']),
+      bankCode: row['bank_code'] as String?,
     );
   }
 
@@ -469,6 +505,7 @@ class _Entry {
         'linguisticSignals': linguisticSignals,
         'cyberSignals': cyberSignals,
         'socialTactics': socialTactics,
+        'bankCode': bankCode,
       };
 
   factory _Entry.fromCacheJson(Map<String, dynamic> json) {
@@ -493,6 +530,7 @@ class _Entry {
       linguisticSignals: readList('linguisticSignals'),
       cyberSignals: readList('cyberSignals'),
       socialTactics: readList('socialTactics'),
+      bankCode: json['bankCode'] as String?,
     );
   }
 
@@ -507,5 +545,6 @@ class _Entry {
         linguisticSignals: linguisticSignals,
         cyberSignals: cyberSignals,
         socialTactics: socialTactics,
+        bankCode: bankCode,
       );
 }

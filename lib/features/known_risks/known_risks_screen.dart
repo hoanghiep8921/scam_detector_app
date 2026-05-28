@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../data/models/vietnamese_bank.dart';
 import '../../services/local_risk_service.dart';
 import '../../shared/widgets/risk_badge.dart';
 import '../result/result_screen.dart';
@@ -232,10 +233,20 @@ class _RiskList extends StatelessWidget {
                   fontFamily: 'monospace',
                 ),
               ),
-              subtitle: r.summary.isEmpty
-                  ? null
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 2),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (r.target == CheckTarget.bankAccount && r.bankCode != null)
+                    Text(
+                      VietnameseBank.fromCode(r.bankCode).shortName,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.textTertiary,
+                          ),
+                    ),
+                  if (r.summary.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(
+                          top: r.bankCode != null ? 2 : 0),
                       child: Text(
                         r.summary,
                         maxLines: 2,
@@ -245,6 +256,8 @@ class _RiskList extends StatelessWidget {
                             ),
                       ),
                     ),
+                ],
+              ),
               trailing: RiskBadge(level: r.riskLevel, score: r.score),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -307,6 +320,7 @@ class _AddRiskDialog extends StatefulWidget {
 
 class _AddRiskDialogState extends State<_AddRiskDialog> {
   late CheckTarget _target = widget.initialTarget;
+  VietnameseBank? _selectedBank;
   RiskLevel _level = RiskLevel.scam;
   final _valueCtrl = TextEditingController();
   final _summaryCtrl = TextEditingController();
@@ -332,6 +346,9 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();
+    final bankCode = _target == CheckTarget.bankAccount
+        ? _selectedBank?.code
+        : null;
     final ok = await widget.service.upsertEntry(
       target: _target,
       value: value,
@@ -339,6 +356,7 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
       score: _score,
       summary: _summaryCtrl.text.trim(),
       reasons: reasons,
+      bankCode: bankCode,
     );
     if (!mounted) return;
     if (ok) {
@@ -374,8 +392,32 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
               ],
               onChanged: _saving
                   ? null
-                  : (v) => setState(() => _target = v ?? _target),
+                  : (v) => setState(() {
+                        _target = v ?? _target;
+                        if (_target != CheckTarget.bankAccount) {
+                          _selectedBank = null;
+                        }
+                      }),
             ),
+            if (_target == CheckTarget.bankAccount) ...[
+              const SizedBox(height: 8),
+              DropdownButtonFormField<VietnameseBank>(
+                initialValue: _selectedBank,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Ngân hàng'),
+                items: [
+                  ...VietnameseBanks.all.map(
+                    (b) => DropdownMenuItem(
+                      value: b,
+                      child: Text(b.name),
+                    ),
+                  ),
+                ],
+                onChanged: _saving
+                    ? null
+                    : (v) => setState(() => _selectedBank = v),
+              ),
+            ],
             const SizedBox(height: 8),
             TextField(
               controller: _valueCtrl,

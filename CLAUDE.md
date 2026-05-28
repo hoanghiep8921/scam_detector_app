@@ -62,6 +62,7 @@ chỉ điểm số), tiếng Việt phổ thông.
 | 20  | Sentry crash + error reporting (auto-disable khi DSN rỗng)        | ✅          |
 | 21  | Đổi default model sang `gemini-flash-latest` alias + override qua `.env` | ✅   |
 | 22  | Đồng nhất "Phân tích nội dung": Home tile + segment tab Kiểm tra → cùng 1 màn | ✅ |
+| 23  | Bank selector: chọn ngân hàng VN khi kiểm tra STK + validate theo bank      | ✅ |
 
 Khi làm việc tiếp, nhớ cập nhật cả README.md lẫn bảng này.
 
@@ -75,7 +76,7 @@ lib/
 │   ├── constants/                  # AppColors, ApiConfig (có hasSupabase)
 │   ├── theme/                      # AppTheme M3 light + dark + Public Sans/Inter
 │   └── i18n/                       # AppStrings map (vi/en) + StringsX extension
-├── data/models/                    # RiskLevel, ScamCheckResult (3 signal lists), MediaAttachment
+├── data/models/                    # RiskLevel, ScamCheckResult (3 signal lists), MediaAttachment, VietnameseBank
 ├── services/
 │   ├── gemini_service.dart         # Gemini Flash (3-axis prompt + multimodal) — on-demand
 │   ├── local_risk_service.dart     # Supabase known_risks + local SharedPreferences cache (TTL 24h)
@@ -147,8 +148,11 @@ supabase/migrations/                # 0001-0004 (scam_checks); 0005-0006 (known_
 - **Lookup priority** (trong `ScamCheckProvider.check()`):
   1. `LocalRiskService.lookup()` — fetch từ Supabase `known_risks` table,
      cache local 24h. Lookup là exact match `(type, normalized_value)`.
+     Với `bankAccount`: nếu user chọn bank → ưu tiên match cả `(type, bank_code, normalized_value)`,
+     fallback về `(type, normalized_value)` nếu không match.
   2. `RemoteRiskService.lookup()` — consensus từ `scam_checks` Supabase
      (theo `target` + `normalized_input`, weighted by distinct device_id).
+     Với `bankAccount`: filter thêm `bank_code` nếu user đã chọn bank.
   3. `UrlPhishingAnalyzer.analyze()` — 6-rule phishing detector cho URL
      (missing HTTPS, suspicious TLD, brand impersonation, typo-squatting,
      homoglyph, excessive subdomains). Trả về `urlHighlights` map để
@@ -218,10 +222,11 @@ từ Supabase row (qua column `linguistic_signals` / `cyber_signals` / `social_t
    - RLS: anon read/insert/delete = true. Filter theo `device_id`.
    - **Upsert** (PRIMARY KEY id) — re-analyze AI cùng id sẽ overwrite.
 
-2. **`public.known_risks`** (centralized blocklist, migration 0005 + 0006)
-   - 13 cột: id, type, value, normalized_value, risk_level, score, summary,
+2. **`public.known_risks`** (centralized blocklist, migration 0005 + 0006 + 0009)
+   - 14 cột: id, type, value, normalized_value, risk_level, score, summary,
      reasons, psychological, linguistic_signals, cyber_signals,
-     social_tactics, created_at, updated_at.
+     social_tactics, bank_code, created_at, updated_at.
+   - `bank_code` — optional, dùng cho `bankAccount` để phân biệt STK theo ngân hàng.
    - `UNIQUE (type, normalized_value)` — upsert ON CONFLICT.
    - RLS: anon read/insert/update/delete = true (demo). Tighten before prod.
    - Trigger `known_risks_touch_updated_at` tự cập nhật `updated_at`.
@@ -246,6 +251,7 @@ supabase/migrations/0005_known_risks.sql        # NEW table + RLS + 123 seed row
 supabase/migrations/0006_known_risks_delete.sql # add anon delete policy
 supabase/migrations/0007_canonicalize_vn_phone.sql  # +84X… ↔ 0X… canonical form
 supabase/migrations/0008_community_reports.sql      # community scam reports table + RLS
+supabase/migrations/0009_known_risks_bank_code.sql  # add bank_code column to known_risks
 ```
 
 Run trong dashboard SQL Editor theo thứ tự. Idempotent (`if not exists` /

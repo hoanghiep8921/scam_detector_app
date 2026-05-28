@@ -5,6 +5,7 @@ import '../core/constants/api_config.dart';
 import '../data/models/media_attachment.dart';
 import '../data/models/scam_check_result.dart';
 import '../data/models/risk_level.dart';
+import '../data/models/vietnamese_bank.dart';
 
 /// Wraps Gemini Flash for **on-demand** behavioural analysis.
 ///
@@ -38,6 +39,7 @@ class GeminiService {
     required String input,
     required String resultId,
     List<MediaAttachment> attachments = const [],
+    String? bankCode,
   }) async {
     final model = _getModel();
     if (model == null) {
@@ -48,6 +50,7 @@ class GeminiService {
       target: target,
       input: input,
       attachments: attachments,
+      bankCode: bankCode,
     );
 
     try {
@@ -151,6 +154,7 @@ class GeminiService {
     required CheckTarget target,
     required String input,
     List<MediaAttachment> attachments = const [],
+    String? bankCode,
   }) {
     final targetVi = switch (target) {
       CheckTarget.phone => 'số điện thoại',
@@ -158,6 +162,12 @@ class GeminiService {
       CheckTarget.url => 'đường dẫn website',
       CheckTarget.content => 'nội dung tin nhắn / mô tả tình huống',
     };
+
+    // Bank context for the AI prompt.
+    final bankContext = (target == CheckTarget.bankAccount && bankCode != null)
+        ? _bankContextFor(bankCode)
+        : '';
+
     final hasMedia = attachments.isNotEmpty;
     final imgCount = attachments.where((a) => a.kind == MediaKind.image).length;
     final vidCount = attachments.where((a) => a.kind == MediaKind.video).length;
@@ -183,7 +193,7 @@ Nội dung text user cung cấp:
 """
 $input
 """''') + mediaBlock
-        : 'Đối tượng cần đánh giá: "$input"  (loại: ${target.name} — $targetVi)';
+        : 'Đối tượng cần đánh giá: "$input"  (loại: ${target.name} — $targetVi)$bankContext';
 
     return '''
 Bạn là **chuyên gia phòng chống lừa đảo Việt Nam** kết hợp 3 chuyên môn:
@@ -238,6 +248,19 @@ JSON BẮT BUỘC (không thêm field):
   "socialTactics": ["<thủ thuật xã hội 1>", "..."]
 }
 ''';
+  }
+
+  String _bankContextFor(String bankCode) {
+    final bank = VietnameseBank.fromCode(bankCode);
+    final range = bank.minDigits == bank.maxDigits
+        ? '${bank.minDigits} chữ số'
+        : '${bank.minDigits}–${bank.maxDigits} chữ số';
+    var ctx = '\n\nLưu ý: Số tài khoản thuộc ${bank.name} (${bank.shortName}), '
+        'thường có $range.';
+    if (bankCode == 'MB' || bankCode == 'TPB') {
+      ctx += ' Ngân hàng này cho phép dùng số điện thoại làm số tài khoản.';
+    }
+    return ctx;
   }
 
   ScamCheckResult _parseResponse({

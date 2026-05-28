@@ -79,6 +79,10 @@ class ScamCheckResult {
   /// e.g. {'http': 40, 'youtobe': 85, '.tk': 60}
   final Map<String, int> urlHighlights;
 
+  /// Bank code for bankAccount checks (e.g. "VCB", "MB", "OTHER"). Null for
+  /// other target types or when the user didn't select a bank.
+  final String? bankCode;
+
   final DateTime checkedAt;
 
   const ScamCheckResult({
@@ -94,6 +98,7 @@ class ScamCheckResult {
     this.cyberSignals = const [],
     this.socialTactics = const [],
     this.urlHighlights = const {},
+    this.bankCode,
     required this.checkedAt,
   });
 
@@ -108,6 +113,7 @@ class ScamCheckResult {
     List<String>? cyberSignals,
     List<String>? socialTactics,
     Map<String, int>? urlHighlights,
+    String? bankCode,
     DateTime? checkedAt,
   }) =>
       ScamCheckResult(
@@ -123,6 +129,7 @@ class ScamCheckResult {
         cyberSignals: cyberSignals ?? this.cyberSignals,
         socialTactics: socialTactics ?? this.socialTactics,
         urlHighlights: urlHighlights ?? this.urlHighlights,
+        bankCode: bankCode ?? this.bankCode,
         checkedAt: checkedAt ?? this.checkedAt,
       );
 
@@ -139,6 +146,7 @@ class ScamCheckResult {
         'cyberSignals': cyberSignals,
         'socialTactics': socialTactics,
         'urlHighlights': urlHighlights,
+        'bankCode': bankCode,
         'checkedAt': checkedAt.toIso8601String(),
       };
 
@@ -163,6 +171,7 @@ class ScamCheckResult {
       cyberSignals: readList('cyberSignals'),
       socialTactics: readList('socialTactics'),
       urlHighlights: (json['urlHighlights'] as Map?)?.cast<String, int>() ?? const {},
+      bankCode: json['bankCode'] as String?,
       checkedAt: DateTime.tryParse(json['checkedAt'] as String? ?? '') ??
           DateTime.now(),
     );

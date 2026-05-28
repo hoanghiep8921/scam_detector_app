@@ -26,6 +26,7 @@ class RemoteRiskService {
     required CheckTarget target,
     required String input,
     required String resultId,
+    String? bankCode,
   }) async {
     final client = _client;
     if (client == null) return null;
@@ -33,7 +34,7 @@ class RemoteRiskService {
     if (target == CheckTarget.content) return null;
     final normalized = LocalRiskService.normalize(target, input);
     try {
-      final rows = await client
+      var query = client
           .from(_table)
           .select(
             'risk_level, risk_score, summary, reasons, psychological, '
@@ -41,7 +42,15 @@ class RemoteRiskService {
             'checked_at, device_id',
           )
           .eq('target', target.name)
-          .eq('normalized_input', normalized)
+          .eq('normalized_input', normalized);
+
+      // If bankCode is provided for bank account checks, filter by it to get
+      // more precise results.
+      if (bankCode != null && bankCode.isNotEmpty && target == CheckTarget.bankAccount) {
+        query = query.eq('bank_code', bankCode);
+      }
+
+      final rows = await query
           .order('checked_at', ascending: false)
           .limit(50);
       final list = (rows as List).cast<Map<String, dynamic>>();
