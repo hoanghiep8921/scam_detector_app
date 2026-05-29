@@ -13,13 +13,13 @@ import '../../services/url_phishing_analyzer.dart';
 
 /// Scam check flow:
 ///
-///   1. Local lookup     → instant exact match in `known_risks.json`
+///   1. Local lookup     → instant exact match in `known_risks`
 ///   2. Remote aggregate → consensus of community history in Supabase
-///   3. Otherwise         → return an "unknown" placeholder; user can tap
-///                          [analyzeWithAi] in the result screen for a
-///                          deeper behavioural / psychological analysis.
+///   3. URL phishing     → local pattern checks (URL only)
+///   4. Community report → other users' flags
+///   5. No data found    → auto-call Gemini for behavioural analysis
 ///
-/// Gemini is **never** auto-called from [check]. AI is on-demand only.
+/// Gemini is auto-called when no data is found (steps 1-4 all miss).
 class ScamCheckProvider extends ChangeNotifier {
   ScamCheckProvider({
     GeminiService? gemini,
@@ -65,13 +65,14 @@ class ScamCheckProvider extends ChangeNotifier {
     required String input,
     List<MediaAttachment> attachments = const [],
     String? bankCode,
+    String locale = 'vi',
   }) async {
     final trimmed = input.trim();
     // For free-text content, allow empty input when at least one media file
     // is attached (image/video-only analysis). Otherwise text is required.
     if (trimmed.isEmpty &&
         !(target == CheckTarget.content && attachments.isNotEmpty)) {
-      _error = 'Vui lòng nhập thông tin cần kiểm tra.';
+      _error = 'Please enter information to check.';
       notifyListeners();
       return null;
     }
@@ -87,6 +88,7 @@ class ScamCheckProvider extends ChangeNotifier {
         // Free-text content has no useful local / remote lookup — go straight
         // to Gemini for behavioural + multimodal analysis.
         result = await _gemini.analyze(
+          locale: locale,
           target: target,
           input: trimmed,
           resultId: id,
@@ -121,28 +123,22 @@ class ScamCheckProvider extends ChangeNotifier {
                 resultId: id,
               )
             : null;
-        // 5. Fall through — no data either side. Return placeholder; AI is opt-in.
-        result = local ??
-            remote ??
-            urlResult ??
-            communityReport?.result ??
-            ScamCheckResult(
-              id: id,
-              target: target,
-              input: trimmed,
-              riskLevel: RiskLevel.unknown,
-              riskScore: 0,
-              summary:
-                  'Chưa có dữ liệu trên app hoặc cộng đồng. Bạn có thể yêu cầu AI phân tích sâu hơn.',
-              reasons: const [
-                'Không tìm thấy trong danh sách rủi ro nội bộ.',
-                'Chưa ai trong cộng đồng kiểm tra số/đường dẫn này trước đây.',
-                'Bấm "Phân tích sâu bằng AI" để Gemini phân tích hành vi.',
-              ],
-              psychological: const PsychologicalFactors(),
-              bankCode: bankCode,
-              checkedAt: DateTime.now(),
-            );
+        // 5. Fall through — no data found, auto-call Gemini.
+        final knownResult = local ?? remote ?? urlResult ?? communityReport?.result;
+        if (knownResult != null) {
+          result = knownResult;
+        } else {
+          _loading = false;
+          _aiLoading = true;
+          notifyListeners();
+          result = await _gemini.analyze(
+          locale: locale,
+            target: target,
+            input: trimmed,
+            resultId: id,
+            bankCode: bankCode,
+          );
+        }
       }
       _lastResult = result;
       await _history.add(result);
@@ -153,6 +149,7 @@ class ScamCheckProvider extends ChangeNotifier {
       return null;
     } finally {
       _loading = false;
+      _aiLoading = false;
       notifyListeners();
     }
   }
@@ -184,11 +181,12 @@ class ScamCheckProvider extends ChangeNotifier {
   ///
   /// Replaces the in-place [_lastResult] (and the matching row in the history
   /// list + Supabase) with a richer Gemini-derived result.
-  Future<ScamCheckResult?> analyzeWithAi(ScamCheckResult original) async {
+  Future<ScamCheckResult?> analyzeWithAi(ScamCheckResult original, {String locale = 'vi'}) async {
     _aiLoading = true;
     notifyListeners();
     try {
       final aiResult = await _gemini.analyze(
+          locale: locale,
         target: original.target,
         input: original.input,
         resultId: original.id,
@@ -219,13 +217,30 @@ class ScamCheckProvider extends ChangeNotifier {
   /// [IncomingCallScreener] into the history feed. Called on app start /
   /// resume / when an incoming-call notification fires. Dedupes by stable id
   /// so calling this multiple times with the same event is a no-op.
-  Future<int> ingestScreenedCalls(List<ScreenedCallEvent> events) async {
+  ///
+  /// [blockedSummary], [warnedSummary], [blockedReason], [warnedReason],
+  /// [offlineReason] are localized strings passed from the widget layer.
+  Future<int> ingestScreenedCalls(
+    List<ScreenedCallEvent> events, {
+    String blockedSummary = 'Call automatically blocked — matched the scam list.',
+    String warnedSummary = 'Suspicious call — warned but not blocked.',
+    String Function(String)? blockedReason,
+    String Function(String)? warnedReason,
+    String offlineReason = 'Number matched the offline list synced from Scam Detector.',
+  }) async {
     if (events.isEmpty) return 0;
     final existingIds = _historyItems.map((e) => e.id).toSet();
     var added = 0;
     final newItems = <ScamCheckResult>[];
     for (final e in events) {
-      final result = await _buildResultForScreenedCall(e);
+      final result = await _buildResultForScreenedCall(
+        e,
+        blockedSummary: blockedSummary,
+        warnedSummary: warnedSummary,
+        blockedReason: blockedReason ?? (n) => 'CallScreeningService blocked the call from $n.',
+        warnedReason: warnedReason ?? (n) => 'CallScreeningService flagged the call from $n.',
+        offlineReason: offlineReason,
+      );
       if (existingIds.contains(result.id)) continue;
       existingIds.add(result.id);
       newItems.add(result);
@@ -233,14 +248,20 @@ class ScamCheckProvider extends ChangeNotifier {
       added++;
     }
     if (added > 0) {
-      // Newest first — events come oldest-first from native, reverse before prepending.
       _historyItems = [...newItems.reversed, ..._historyItems];
       notifyListeners();
     }
     return added;
   }
 
-  Future<ScamCheckResult> _buildResultForScreenedCall(ScreenedCallEvent e) async {
+  Future<ScamCheckResult> _buildResultForScreenedCall(
+    ScreenedCallEvent e, {
+    required String blockedSummary,
+    required String warnedSummary,
+    required String Function(String) blockedReason,
+    required String Function(String) warnedReason,
+    required String offlineReason,
+  }) async {
     final normalized = LocalRiskService.normalize(CheckTarget.phone, e.number);
     final stableId = 'native-$normalized-${e.timestamp.millisecondsSinceEpoch}';
     final lookup = await _localRisk.lookup(
@@ -249,24 +270,19 @@ class ScamCheckProvider extends ChangeNotifier {
       resultId: stableId,
     );
     if (lookup != null) {
-      // Use the offline-lookup risk data, but keep the stable id + actual call time.
       return lookup.copyWith(id: stableId, checkedAt: e.timestamp);
     }
-    final isScam = e.label.toLowerCase().contains('lừa');
+    final isScam = e.label.toLowerCase().contains('lừa') || e.label.toLowerCase().contains('scam');
     return ScamCheckResult(
       id: stableId,
       target: CheckTarget.phone,
       input: e.number,
       riskLevel: isScam ? RiskLevel.scam : RiskLevel.suspicious,
       riskScore: e.blocked ? 92 : 60,
-      summary: e.blocked
-          ? 'Cuộc gọi bị chặn tự động vì khớp danh sách lừa đảo.'
-          : 'Cuộc gọi nghi ngờ — đã được cảnh báo nhưng không chặn.',
+      summary: e.blocked ? blockedSummary : warnedSummary,
       reasons: [
-        e.blocked
-            ? 'CallScreeningService đã chặn cuộc gọi từ ${e.number}.'
-            : 'CallScreeningService cảnh báo cuộc gọi từ ${e.number}.',
-        'Số khớp danh sách offline được đồng bộ từ Scam Detector.',
+        e.blocked ? blockedReason(e.number) : warnedReason(e.number),
+        offlineReason,
       ],
       psychological: const PsychologicalFactors(),
       checkedAt: e.timestamp,

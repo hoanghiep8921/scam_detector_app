@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Half-circle gauge showing risk score 0-100.
 ///
@@ -14,11 +15,12 @@ class RiskGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return SizedBox(
       width: 220,
       height: 130,
       child: CustomPaint(
-        painter: _GaugePainter(score: score, color: level.color),
+        painter: _GaugePainter(score: score, color: level.color, trackColor: colors.surfaceContainer),
         child: Center(
           child: Padding(
             padding: const EdgeInsets.only(top: 30),
@@ -27,20 +29,20 @@ class RiskGauge extends StatelessWidget {
               children: [
                 Text(
                   '$score',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 56,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: colors.textPrimary,
                     height: 1,
                   ),
                 ),
-                const Text(
-                  'ĐIỂM RỦI RO',
+                Text(
+                  AppLocalizations.of(context)!.riskScoreLabel,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.2,
-                    color: AppColors.textSecondary,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -53,10 +55,11 @@ class RiskGauge extends StatelessWidget {
 }
 
 class _GaugePainter extends CustomPainter {
-  _GaugePainter({required this.score, required this.color});
+  _GaugePainter({required this.score, required this.color, required this.trackColor});
 
   final int score;
   final Color color;
+  final Color trackColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -72,7 +75,7 @@ class _GaugePainter extends CustomPainter {
       sweep,
       false,
       Paint()
-        ..color = AppColors.surfaceContainer
+        ..color = trackColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 14
         ..strokeCap = StrokeCap.round,
@@ -94,5 +97,5 @@ class _GaugePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GaugePainter old) =>
-      old.score != score || old.color != color;
+      old.score != score || old.color != color || old.trackColor != trackColor;
 }

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../shared/widgets/risk_badge.dart';
 import '../result/result_screen.dart';
 import '../scam_check/scam_check_provider.dart';
@@ -57,7 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thông báo'),
+        title: Text(AppLocalizations.of(context)!.notifTitle),
       ),
       body: items.isEmpty
           ? const _EmptyState()
@@ -80,7 +81,8 @@ class _NotificationCard extends StatelessWidget {
     final df = DateFormat('dd/MM/yyyy HH:mm');
     final isScam = item.riskLevel == RiskLevel.scam;
     final accent = item.riskLevel.color;
-    final action = isScam ? 'Đã chặn cuộc gọi' : 'Cuộc gọi nghi ngờ';
+    final l = AppLocalizations.of(context)!;
+    final action = isScam ? l.notifCallBlocked : l.notifCallSuspicious;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -147,7 +149,7 @@ class _NotificationCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: AppColors.of(context).textSecondary,
                             ),
                       ),
                     ],
@@ -155,7 +157,7 @@ class _NotificationCard extends StatelessWidget {
                     Text(
                       df.format(item.checkedAt),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.textTertiary,
+                            color: AppColors.of(context).textTertiary,
                           ),
                     ),
                   ],
@@ -179,14 +181,14 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.notifications_off_outlined,
-                size: 56, color: AppColors.textTertiary),
+            Icon(Icons.notifications_off_outlined,
+                size: 56, color: AppColors.of(context).textTertiary),
             const SizedBox(height: 12),
             Text(
-              'Chưa có cuộc gọi nào được CallScreening xử lý.\nKhi có số trong danh sách lừa đảo gọi tới, bạn sẽ thấy ở đây.',
+              AppLocalizations.of(context)!.notifEmpty,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.of(context).textSecondary,
                   ),
             ),
           ],

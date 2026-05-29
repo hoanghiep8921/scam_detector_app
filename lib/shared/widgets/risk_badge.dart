@@ -13,6 +13,7 @@ class RiskBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = level.color;
+    final label = level.localizedLabel(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -26,7 +27,7 @@ class RiskBadge extends StatelessWidget {
           Icon(level.icon, size: 16, color: color),
           const SizedBox(width: 6),
           Text(
-            score != null ? '${level.label} • $score' : level.label,
+            score != null ? '$label • $score' : label,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
 import '../data/models/risk_level.dart';
 import '../data/models/scam_check_result.dart';
+import '../flutter_gen/gen_l10n/app_localizations.dart';
 import '../services/call_screening_service.dart';
 import '../services/local_risk_service.dart';
 import '../services/settings_service.dart';
@@ -64,7 +65,15 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   Future<void> _drainScreenedCalls() async {
     final events = await _callScreening.drainScreeningEvents();
     if (events.isEmpty || !mounted) return;
-    await context.read<ScamCheckProvider>().ingestScreenedCalls(events);
+    final l = AppLocalizations.of(context)!;
+    await context.read<ScamCheckProvider>().ingestScreenedCalls(
+      events,
+      blockedSummary: l.screenedCallBlockedSummary,
+      warnedSummary: l.screenedCallWarnedSummary,
+      blockedReason: (n) => l.screenedCallBlockedReason(n),
+      warnedReason: (n) => l.screenedCallWarnedReason(n),
+      offlineReason: l.screenedCallOfflineReason,
+    );
   }
 
   Future<void> _onIncomingCall(IncomingCallEvent event) async {
@@ -73,21 +82,18 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       input: event.number,
       resultId: 'native-${DateTime.now().millisecondsSinceEpoch}',
     );
+    if (!mounted) return;
+    final l = AppLocalizations.of(context)!;
+    final isScam = event.label.toLowerCase().contains('lừa') || event.label.toLowerCase().contains('scam');
     final result = lookup ??
         ScamCheckResult(
           id: 'native',
           target: CheckTarget.phone,
           input: event.number,
-          riskLevel: event.label.toLowerCase().contains('lừa')
-              ? RiskLevel.scam
-              : RiskLevel.suspicious,
+          riskLevel: isScam ? RiskLevel.scam : RiskLevel.suspicious,
           riskScore: event.blocked ? 92 : 60,
-          summary:
-              'Cuộc gọi từ số có dấu hiệu ${event.label.toLowerCase()}. '
-              'Hãy thận trọng nếu bắt máy.',
-          reasons: const [
-            'CallScreeningService phát hiện trùng danh sách offline.',
-          ],
+          summary: l.incomingCallSummary(event.label.toLowerCase()),
+          reasons: [l.incomingCallScreenedReason],
           psychological: const PsychologicalFactors(),
           checkedAt: DateTime.now(),
         );
@@ -135,29 +141,29 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           bottomNavigationBar: NavigationBar(
             selectedIndex: _index,
             onDestinationSelected: (i) => setState(() => _index = i),
-            backgroundColor: AppColors.surface,
-            indicatorColor: AppColors.primaryContainer,
+            backgroundColor: AppColors.of(context).surface,
+            indicatorColor: AppColors.of(context).primary.withValues(alpha: 0.15),
             height: 68,
-            destinations: const [
+            destinations: [
               NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home, color: AppColors.primary),
-                label: 'Trang chủ',
+                icon: const Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home, color: AppColors.of(context).primary),
+                label: AppLocalizations.of(context)!.navHome,
               ),
               NavigationDestination(
-                icon: Icon(Icons.search_outlined),
-                selectedIcon: Icon(Icons.search, color: AppColors.primary),
-                label: 'Kiểm tra',
+                icon: const Icon(Icons.search_outlined),
+                selectedIcon: Icon(Icons.search, color: AppColors.of(context).primary),
+                label: AppLocalizations.of(context)!.navCheck,
               ),
               NavigationDestination(
-                icon: Icon(Icons.history_outlined),
-                selectedIcon: Icon(Icons.history, color: AppColors.primary),
-                label: 'Lịch sử',
+                icon: const Icon(Icons.history_outlined),
+                selectedIcon: Icon(Icons.history, color: AppColors.of(context).primary),
+                label: AppLocalizations.of(context)!.navHistory,
               ),
               NavigationDestination(
-                icon: Icon(Icons.shield_outlined),
-                selectedIcon: Icon(Icons.shield, color: AppColors.primary),
-                label: 'Bảo vệ',
+                icon: const Icon(Icons.shield_outlined),
+                selectedIcon: Icon(Icons.shield, color: AppColors.of(context).primary),
+                label: AppLocalizations.of(context)!.navProtect,
               ),
             ],
           ),

@@ -40,6 +40,7 @@ class GeminiService {
     required String resultId,
     List<MediaAttachment> attachments = const [],
     String? bankCode,
+    String locale = 'vi',
   }) async {
     final model = _getModel();
     if (model == null) {
@@ -51,6 +52,7 @@ class GeminiService {
       input: input,
       attachments: attachments,
       bankCode: bankCode,
+      locale: locale,
     );
 
     try {
@@ -66,7 +68,8 @@ class GeminiService {
           for (final m in attachments) DataPart(m.mimeType, m.bytes),
         ]);
       }
-      final response = await model.generateContent([content]);
+      final response = await model.generateContent([content])
+          .timeout(const Duration(seconds: 30));
       final text = response.text ?? '';
       return _parseResponse(
         target: target,
@@ -95,7 +98,7 @@ class GeminiService {
           });
         },
       );
-      final pretty = _humanizeGeminiError(e);
+      final pretty = _humanizeGeminiError(e, locale: locale);
       return ScamCheckResult(
         id: resultId,
         target: target,
@@ -110,43 +113,42 @@ class GeminiService {
     }
   }
 
-  /// Convert raw Gemini error into a user-friendly Vietnamese message.
-  /// Returns (summary, reasons) — reasons exposes the underlying error so the
-  /// user can still copy-paste to support if needed.
-  ({String summary, List<String> reasons}) _humanizeGeminiError(Object e) {
+  /// Convert raw Gemini error into a user-friendly message.
+  ({String summary, List<String> reasons}) _humanizeGeminiError(Object e, {String locale = 'vi'}) {
     final msg = e.toString().toLowerCase();
+    final isEn = locale == 'en';
     if (msg.contains('unsupporteduserlocation') ||
         msg.contains('user location') ||
         msg.contains('not supported')) {
       return (
-        
-        summary:
-            'Mạng hiện tại của thiết bị đang bị Google chặn truy cập Gemini '
-            '(thường gặp khi dùng 4G/5G của một số nhà mạng VN, VPN, hoặc '
-            'Private DNS). Hãy chuyển sang WiFi và thử lại.',
+        summary: isEn
+            ? 'Your network is blocked by Google from accessing Gemini (common with some mobile carriers, VPN, or Private DNS). Switch to WiFi and try again.'
+            : 'Mạng hiện tại của thiết bị đang bị Google chặn truy cập Gemini '
+              '(thường gặp khi dùng 4G/5G của một số nhà mạng VN, VPN, hoặc '
+              'Private DNS). Hãy chuyển sang WiFi và thử lại.',
         reasons: [
-          'Lỗi: ${e.toString()}',
-          'Cách 1: Đổi WiFi (cùng mạng với máy chạy được là chắc).',
-          'Cách 2: Tắt VPN / Private DNS trong Settings → Network.',
-          'Cách 3: Đổi DNS WiFi sang 8.8.8.8 hoặc 1.1.1.1.',
+          '${isEn ? "Error" : "Lỗi"}: ${e.toString()}',
+          isEn ? 'Fix 1: Switch to WiFi.' : 'Cách 1: Đổi WiFi (cùng mạng với máy chạy được là chắc).',
+          isEn ? 'Fix 2: Disable VPN / Private DNS.' : 'Cách 2: Tắt VPN / Private DNS trong Settings → Network.',
+          isEn ? 'Fix 3: Change DNS to 8.8.8.8 or 1.1.1.1.' : 'Cách 3: Đổi DNS WiFi sang 8.8.8.8 hoặc 1.1.1.1.',
         ],
       );
     }
     if (msg.contains('quota') || msg.contains('rate limit')) {
       return (
-        summary: 'Vượt quota Gemini. Đợi 1 phút rồi thử lại.',
-        reasons: ['Lỗi: ${e.toString()}'],
+        summary: isEn ? 'Gemini quota exceeded. Wait 1 minute and try again.' : 'Vượt quota Gemini. Đợi 1 phút rồi thử lại.',
+        reasons: ['${isEn ? "Error" : "Lỗi"}: ${e.toString()}'],
       );
     }
     if (msg.contains('safety') || msg.contains('blocked')) {
       return (
-        summary: 'Gemini từ chối phân tích vì bộ lọc an toàn. Thử mô tả nhẹ hơn.',
-        reasons: ['Lỗi: ${e.toString()}'],
+        summary: isEn ? 'Gemini refused to analyze due to safety filters. Try a milder description.' : 'Gemini từ chối phân tích vì bộ lọc an toàn. Thử mô tả nhẹ hơn.',
+        reasons: ['${isEn ? "Error" : "Lỗi"}: ${e.toString()}'],
       );
     }
     return (
-      summary: 'Không thể kết nối đến AI. Vui lòng thử lại.',
-      reasons: ['Lỗi: ${e.toString()}'],
+      summary: isEn ? 'Cannot connect to AI. Please try again.' : 'Không thể kết nối đến AI. Vui lòng thử lại.',
+      reasons: ['${isEn ? "Error" : "Lỗi"}: ${e.toString()}'],
     );
   }
 
@@ -155,7 +157,11 @@ class GeminiService {
     required String input,
     List<MediaAttachment> attachments = const [],
     String? bankCode,
+    String locale = 'vi',
   }) {
+    if (locale == 'en') {
+      return _buildPromptEn(target: target, input: input, attachments: attachments, bankCode: bankCode);
+    }
     final targetVi = switch (target) {
       CheckTarget.phone => 'số điện thoại',
       CheckTarget.bankAccount => 'số tài khoản ngân hàng',
@@ -246,6 +252,100 @@ JSON BẮT BUỘC (không thêm field):
   "linguistic": ["<dấu hiệu ngôn ngữ 1>", "..."],
   "cybersecurity": ["<dấu hiệu kỹ thuật 1>", "..."],
   "socialTactics": ["<thủ thuật xã hội 1>", "..."]
+}
+''';
+  }
+
+  String _buildPromptEn({
+    required CheckTarget target,
+    required String input,
+    List<MediaAttachment> attachments = const [],
+    String? bankCode,
+  }) {
+    final targetEn = switch (target) {
+      CheckTarget.phone => 'phone number',
+      CheckTarget.bankAccount => 'bank account number',
+      CheckTarget.url => 'website URL',
+      CheckTarget.content => 'message content / situation description',
+    };
+
+    final bankContext = (target == CheckTarget.bankAccount && bankCode != null)
+        ? _bankContextFor(bankCode)
+        : '';
+
+    final hasMedia = attachments.isNotEmpty;
+    final imgCount = attachments.where((a) => a.kind == MediaKind.image).length;
+    final vidCount = attachments.where((a) => a.kind == MediaKind.video).length;
+    final mediaBlock = hasMedia
+        ? '''
+
+User attached:
+${imgCount > 0 ? '- $imgCount image(s) (screenshots of messages / calls / websites / video calls).' : ''}
+${vidCount > 0 ? '- $vidCount video(s) (screen recordings of conversations / ads / calls).' : ''}
+
+Read text content in images (OCR), brand interfaces, scripts in video,
+body language if visible. Analyze together with user's text (if any).
+If you detect logos / bank names / account numbers / URLs in images, extract them in `reasons`.'''
+        : '';
+
+    final inputBlock = target == CheckTarget.content
+        ? (input.isEmpty
+            ? 'User provided NO text — analyze entirely from attached media.'
+            : '''
+User-provided text content:
+
+"""
+$input
+"""''') + mediaBlock
+        : 'Target to evaluate: "$input"  (type: ${target.name} — $targetEn)$bankContext';
+
+    return '''
+You are a **Vietnamese fraud prevention expert** combining 3 specializations:
+linguistics, cybersecurity, and social psychology (Cialdini & Hofstede).
+
+$inputBlock
+
+Analyze from **multiple angles** and return PURE JSON (no markdown, no extra text)
+following the schema below. Each signal list should have 1–4 items, concise (≤25 words),
+specific, easy to understand for general users.
+
+### 1. Linguistics (`linguistic`)
+Language red flags: urgency keywords, repeated scripts, bank/authority impersonation
+in display names, unusual spelling/grammar errors, threatening vs. enticing tone.
+
+### 2. Cybersecurity (`cybersecurity`)
+Technical signals: domain structure (typo-squatting, unusual TLDs like .xyz/.tk),
+fake HTTPS, redirects, known scam phone number ranges, mule accounts, SSL certs, brand impersonation.
+
+### 3. Social tactics (`socialTactics`)
+Apply Cialdini's 6 principles (Reciprocity / Commitment / Social Proof / Authority /
+Liking / Scarcity) and common emotional manipulation mechanisms.
+List specific tactics being used.
+
+### 4. Quantified psychological factors (`psychological`)
+Score 0–100 for 4 axes: urgency, fear, authority, greed.
+
+### 5. Summary
+- `riskScore`: 0–100
+- `riskLevel`: "safe" / "suspicious" / "scam"
+- `summary`: 1–2 sentence conclusion in English
+- `reasons`: 3–5 key reasons (combined from the 3 angles above)
+
+REQUIRED JSON (no extra fields):
+{
+  "riskScore": <int 0-100>,
+  "riskLevel": "<safe|suspicious|scam>",
+  "summary": "<1-2 sentences in English>",
+  "reasons": ["<reason 1>", "..."],
+  "psychological": {
+    "urgency": <0-100>,
+    "fear": <0-100>,
+    "authority": <0-100>,
+    "greed": <0-100>
+  },
+  "linguistic": ["<language signal 1>", "..."],
+  "cybersecurity": ["<technical signal 1>", "..."],
+  "socialTactics": ["<social tactic 1>", "..."]
 }
 ''';
   }

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Full-screen modal overlay shown while Gemini is analyzing.
 ///
@@ -8,9 +9,9 @@ import '../../core/constants/app_colors.dart';
 /// rotating sweep gradient ring around a shield icon, on top of a slowly
 /// pulsing aura. Communicates "AI đang nghĩ" rather than "scanning".
 class ScanningOverlay extends StatefulWidget {
-  const ScanningOverlay({super.key, this.message = 'Đang phân tích bằng AI…'});
+  const ScanningOverlay({super.key, this.message});
 
-  final String message;
+  final String? message;
 
   @override
   State<ScanningOverlay> createState() => _ScanningOverlayState();
@@ -39,6 +40,8 @@ class _ScanningOverlayState extends State<ScanningOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final accentColor = colors.primary;
     return ColoredBox(
       color: Colors.black.withValues(alpha: 0.45),
       child: Center(
@@ -46,7 +49,7 @@ class _ScanningOverlayState extends State<ScanningOverlay>
           width: 280,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -69,7 +72,7 @@ class _ScanningOverlayState extends State<ScanningOverlay>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppColors.primary
+                              color: accentColor
                                   .withValues(alpha: (1.0 - t) * 0.35),
                               width: 2,
                             ),
@@ -90,10 +93,10 @@ class _ScanningOverlayState extends State<ScanningOverlay>
                               shape: BoxShape.circle,
                               gradient: SweepGradient(
                                 colors: [
-                                  AppColors.primary.withValues(alpha: 0.0),
-                                  AppColors.primary.withValues(alpha: 0.55),
-                                  AppColors.primary,
-                                  AppColors.primary.withValues(alpha: 0.0),
+                                  accentColor.withValues(alpha: 0.0),
+                                  accentColor.withValues(alpha: 0.55),
+                                  accentColor,
+                                  accentColor.withValues(alpha: 0.0),
                                 ],
                                 stops: const [0.0, 0.4, 0.55, 1.0],
                               ),
@@ -106,9 +109,9 @@ class _ScanningOverlayState extends State<ScanningOverlay>
                     Container(
                       width: 88,
                       height: 88,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.surface,
+                        color: colors.surface,
                       ),
                     ),
                     // Soft tinted disc behind the shield.
@@ -117,7 +120,7 @@ class _ScanningOverlayState extends State<ScanningOverlay>
                       height: 76,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.primary.withValues(alpha: 0.10),
+                        color: accentColor.withValues(alpha: 0.10),
                       ),
                     ),
                     // Shield with gentle scale pulse.
@@ -130,10 +133,10 @@ class _ScanningOverlayState extends State<ScanningOverlay>
                                 0.08;
                         return Transform.scale(scale: scale, child: child);
                       },
-                      child: const Icon(
+                      child: Icon(
                         Icons.shield_outlined,
                         size: 44,
-                        color: AppColors.primary,
+                        color: accentColor,
                       ),
                     ),
                     // Three sparkles orbiting around the shield.
@@ -159,9 +162,8 @@ class _ScanningOverlayState extends State<ScanningOverlay>
                                   Icons.auto_awesome,
                                   size: size,
                                   color: i == 0
-                                      ? AppColors.primary
-                                      : AppColors.primary
-                                          .withValues(alpha: 0.55),
+                                      ? accentColor
+                                      : accentColor.withValues(alpha: 0.55),
                                 ),
                               );
                             }),
@@ -174,19 +176,19 @@ class _ScanningOverlayState extends State<ScanningOverlay>
               ),
               const SizedBox(height: 18),
               Text(
-                widget.message,
+                widget.message ?? AppLocalizations.of(context)!.scanningDefaultMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Gemini đang phân tích đa góc nhìn — 2–5 giây.',
+              Text(
+                AppLocalizations.of(context)!.scanningSubtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 12, color: colors.textSecondary),
               ),
             ],
           ),

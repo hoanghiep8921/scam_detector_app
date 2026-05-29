@@ -1,8 +1,11 @@
+import 'package:flutter/material.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import 'risk_level.dart';
 
 enum CheckTarget { phone, bankAccount, url, content }
 
 extension CheckTargetX on CheckTarget {
+  /// Fallback label (Vietnamese) — used in non-widget contexts.
   String get label {
     switch (this) {
       case CheckTarget.phone:
@@ -13,6 +16,21 @@ extension CheckTargetX on CheckTarget {
         return 'Đường dẫn';
       case CheckTarget.content:
         return 'Nội dung tin nhắn';
+    }
+  }
+
+  /// Localized label — use this in UI widgets.
+  String localizedLabel(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    switch (this) {
+      case CheckTarget.phone:
+        return l.targetPhone;
+      case CheckTarget.bankAccount:
+        return l.targetBank;
+      case CheckTarget.url:
+        return l.targetUrl;
+      case CheckTarget.content:
+        return l.targetContent;
     }
   }
 }

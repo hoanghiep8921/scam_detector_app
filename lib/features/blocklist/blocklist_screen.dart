@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../services/call_screening_service.dart';
 import '../../services/local_risk_service.dart';
 
@@ -54,7 +55,7 @@ class _BlocklistScreenState extends State<BlocklistScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Đã đồng bộ ${scam.length} số lừa đảo, ${suspicious.length} số nghi ngờ.',
+          AppLocalizations.of(context)!.blocklistResyncSnack(scam.length, suspicious.length),
         ),
       ),
     );
@@ -65,10 +66,10 @@ class _BlocklistScreenState extends State<BlocklistScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Danh sách offline đang chặn'),
+        title: Text(AppLocalizations.of(context)!.blocklistTitle),
         actions: [
           IconButton(
-            tooltip: 'Đồng bộ lại từ máy chủ',
+            tooltip: AppLocalizations.of(context)!.tooltipResync,
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _resync,
           ),
@@ -88,14 +89,14 @@ class _BlocklistScreenState extends State<BlocklistScreen> {
                   const _EmptyState()
                 else ...[
                   _Section(
-                    title: 'Số sẽ bị chặn (lừa đảo)',
+                    title: AppLocalizations.of(context)!.blocklistSectionScam,
                     icon: Icons.dangerous_outlined,
                     color: AppColors.riskHigh,
                     numbers: _scam.toList()..sort(),
                   ),
                   const SizedBox(height: 16),
                   _Section(
-                    title: 'Số sẽ kèm cảnh báo (nghi ngờ)',
+                    title: AppLocalizations.of(context)!.blocklistSectionSuspicious,
                     icon: Icons.warning_amber_rounded,
                     color: AppColors.riskMedium,
                     numbers: _suspicious.toList()..sort(),
@@ -116,14 +117,18 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryDark],
+        gradient: isDark ? null : LinearGradient(
+          colors: [colors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        color: isDark ? colors.surface : null,
+        border: isDark ? Border.all(color: colors.border) : null,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -132,10 +137,10 @@ class _SummaryCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
+              color: isDark ? colors.primary.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.shield, color: Colors.white),
+            child: Icon(Icons.shield, color: isDark ? colors.primary : Colors.white),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -143,19 +148,19 @@ class _SummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${scam + suspicious} số đang được giám sát',
+                  AppLocalizations.of(context)!.blocklistSummary(scam + suspicious),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
+                        color: isDark ? colors.textPrimary : Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$scam số sẽ bị chặn, $suspicious số sẽ kèm cảnh báo.',
+                  AppLocalizations.of(context)!.blocklistSummarySub(scam, suspicious),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
+                        color: isDark ? colors.textSecondary : Colors.white70,
                       ),
                 ),
               ],
@@ -225,7 +230,7 @@ class _Section extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(
-                  'Chưa có số nào ở mức này.',
+                  AppLocalizations.of(context)!.blocklistSectionEmpty,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               )
@@ -271,17 +276,17 @@ class _EmptyState extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: AppColors.textTertiary),
+          Icon(Icons.info_outline, color: AppColors.of(context).textTertiary),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Chưa có số nào trong danh sách offline. Bấm nút đồng bộ ở góc phải để tải về từ máy chủ.',
+              AppLocalizations.of(context)!.blocklistEmpty,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -302,15 +307,15 @@ class _Notes extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, color: Colors.orange, size: 20),
-          SizedBox(width: 10),
+          const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Đây là danh sách số điện thoại đã được tải xuống máy. CallScreeningService chạy hoàn toàn offline — không gửi số ra ngoài.',
-              style: TextStyle(fontSize: 13, height: 1.4),
+              AppLocalizations.of(context)!.blocklistNote,
+              style: const TextStyle(fontSize: 13, height: 1.4),
             ),
           ),
         ],

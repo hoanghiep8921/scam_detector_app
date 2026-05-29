@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../services/call_screening_service.dart';
 
 /// Full-screen warning overlay shown when a scam call is detected.
@@ -48,7 +49,7 @@ class IncomingCallScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Cảnh báo bảo mật',
+                    AppLocalizations.of(context)!.incomingSecurityWarning,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -57,8 +58,8 @@ class IncomingCallScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     isScam
-                        ? 'AI PHÁT HIỆN MẪU LỪA ĐẢO'
-                        : 'CẦN THẬN — DẤU HIỆU NGHI NGỜ',
+                        ? AppLocalizations.of(context)!.incomingScamDetected
+                        : AppLocalizations.of(context)!.incomingSuspiciousDetected,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.85),
                           letterSpacing: 1.5,
@@ -74,8 +75,8 @@ class IncomingCallScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
+                decoration: BoxDecoration(
+                  color: AppColors.of(context).surface,
                   borderRadius:
                       BorderRadius.vertical(top: Radius.circular(28)),
                 ),
@@ -85,7 +86,7 @@ class IncomingCallScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'CUỘC GỌI ĐẾN',
+                        AppLocalizations.of(context)!.incomingCallLabel,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: accent,
                               fontWeight: FontWeight.w700,
@@ -99,21 +100,21 @@ class IncomingCallScreen extends StatelessWidget {
                           Expanded(
                             child: Text(
                               phoneNumber,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
+                                color: AppColors.of(context).textPrimary,
                               ),
                             ),
                           ),
                           IconButton.filledTonal(
-                            tooltip: 'Sao chép số',
+                            tooltip: AppLocalizations.of(context)!.incomingCopyTooltip,
                             onPressed: () async {
                               await Clipboard.setData(
                                   ClipboardData(text: phoneNumber));
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Đã sao chép')),
+                                SnackBar(content: Text(AppLocalizations.of(context)!.incomingCopied)),
                               );
                             },
                             icon: const Icon(Icons.copy_outlined),
@@ -127,9 +128,9 @@ class IncomingCallScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 22),
                       Text(
-                        'PHÂN TÍCH NGUY CƠ',
+                        AppLocalizations.of(context)!.incomingRiskAnalysis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.textTertiary,
+                              color: AppColors.of(context).textTertiary,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.2,
                             ),
@@ -164,9 +165,12 @@ class IncomingCallScreen extends StatelessWidget {
                       const SizedBox(height: 24),
                       _PrimaryActionButton(
                         accent: accent,
-                        label: isScam ? 'CHẶN & NGẮT MÁY' : 'GHI NHẬN CẢNH BÁO',
+                        label: isScam
+                            ? AppLocalizations.of(context)!.incomingBlockBtn
+                            : AppLocalizations.of(context)!.incomingWarnBtn,
                         icon: Icons.block,
                         onPressed: () async {
+                          final l = AppLocalizations.of(context)!;
                           final messenger = ScaffoldMessenger.of(context);
                           final navigator = Navigator.of(context);
                           await CallScreeningService().addToBlocklist(
@@ -176,9 +180,7 @@ class IncomingCallScreen extends StatelessWidget {
                           navigator.pop(true);
                           messenger.showSnackBar(
                             SnackBar(
-                              content: Text(
-                                'Đã thêm $phoneNumber vào danh sách chặn lừa đảo.',
-                              ),
+                              content: Text(l.incomingBlockedSnack(phoneNumber)),
                             ),
                           );
                         },
@@ -186,6 +188,7 @@ class IncomingCallScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       TextButton(
                         onPressed: () async {
+                          final l = AppLocalizations.of(context)!;
                           final messenger = ScaffoldMessenger.of(context);
                           final navigator = Navigator.of(context);
                           final removed = await CallScreeningService()
@@ -195,27 +198,27 @@ class IncomingCallScreen extends StatelessWidget {
                             SnackBar(
                               content: Text(
                                 removed
-                                    ? 'Đã gỡ $phoneNumber khỏi danh sách chặn.'
-                                    : '$phoneNumber không có trong danh sách offline.',
+                                    ? l.incomingRemovedSnack(phoneNumber)
+                                    : l.incomingNotInListSnack(phoneNumber),
                               ),
                             ),
                           );
                         },
-                        child: const Text('Tôi vẫn tin số này'),
+                        child: Text(AppLocalizations.of(context)!.incomingTrustBtn),
                       ),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.shield_outlined,
-                              size: 14, color: AppColors.textTertiary),
+                          Icon(Icons.shield_outlined,
+                              size: 14, color: AppColors.of(context).textTertiary),
                           const SizedBox(width: 6),
                           Text(
-                            'Bảo vệ chủ động bởi Scam Detector',
+                            AppLocalizations.of(context)!.incomingProtectedBy,
                             style: Theme.of(context)
                                 .textTheme
                                 .labelSmall
-                                ?.copyWith(color: AppColors.textTertiary),
+                                ?.copyWith(color: AppColors.of(context).textTertiary),
                           ),
                         ],
                       ),
@@ -242,9 +245,9 @@ class _ConfidenceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
+        color: AppColors.of(context).surfaceContainerLow,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Column(
         children: [
@@ -254,11 +257,11 @@ class _ConfidenceCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryContainer,
+                  color: AppColors.of(context).primaryContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.auto_awesome,
-                    color: AppColors.primary, size: 18),
+                child: Icon(Icons.auto_awesome,
+                    color: AppColors.of(context).primary, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -281,11 +284,11 @@ class _ConfidenceCard extends StatelessWidget {
                   )),
               const SizedBox(width: 4),
               Text(
-                'NIỀM TIN',
+                AppLocalizations.of(context)!.incomingConfidence,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.textTertiary,
+                      color: AppColors.of(context).textTertiary,
                       fontWeight: FontWeight.w700,
                     ),
               ),

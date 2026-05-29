@@ -3,6 +3,7 @@ import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
 import '../../data/models/scam_check_result.dart';
 import '../../data/models/vietnamese_bank.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../services/local_risk_service.dart';
 import '../../shared/widgets/risk_badge.dart';
 import '../result/result_screen.dart';
@@ -74,10 +75,10 @@ class _KnownRisksScreenState extends State<KnownRisksScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cơ sở dữ liệu lừa đảo'),
+        title: Text(AppLocalizations.of(context)!.knownRisksTitle),
         actions: [
           IconButton(
-            tooltip: 'Tải lại từ máy chủ',
+            tooltip: AppLocalizations.of(context)!.tooltipRefresh,
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : () => _load(refresh: true),
           ),
@@ -85,14 +86,14 @@ class _KnownRisksScreenState extends State<KnownRisksScreen>
         bottom: TabBar(
           controller: _tabs,
           isScrollable: false,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.primary,
+          labelColor: AppColors.of(context).primary,
+          unselectedLabelColor: AppColors.of(context).textSecondary,
+          indicatorColor: AppColors.of(context).primary,
           onTap: (_) => setState(() {}),
           tabs: [
-            Tab(text: 'Số ĐT (${phones.length})'),
-            Tab(text: 'Tài khoản (${banks.length})'),
-            Tab(text: 'Đường dẫn (${urls.length})'),
+            Tab(text: AppLocalizations.of(context)!.knownRisksTabPhone(phones.length)),
+            Tab(text: AppLocalizations.of(context)!.knownRisksTabBank(banks.length)),
+            Tab(text: AppLocalizations.of(context)!.knownRisksTabUrl(urls.length)),
           ],
         ),
       ),
@@ -121,7 +122,7 @@ class _KnownRisksScreenState extends State<KnownRisksScreen>
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _loading ? null : () => _showAddDialog(currentTarget),
         icon: const Icon(Icons.add),
-        label: const Text('Thêm'),
+        label: Text(AppLocalizations.of(context)!.knownRisksAddBtn),
       ),
     );
   }
@@ -133,7 +134,7 @@ class _KnownRisksScreenState extends State<KnownRisksScreen>
     );
     if (saved == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã thêm vào cơ sở dữ liệu.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.knownRisksAddedSnack)),
       );
       _load();
     }
@@ -159,14 +160,14 @@ class _RiskList extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off,
-                  size: 56, color: AppColors.textTertiary),
+              Icon(Icons.cloud_off,
+                  size: 56, color: AppColors.of(context).textTertiary),
               const SizedBox(height: 12),
               Text(
-                'Chưa có dữ liệu cho danh mục này.\nKiểm tra kết nối Supabase rồi bấm tải lại.',
+                AppLocalizations.of(context)!.knownRisksEmpty,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: AppColors.of(context).textSecondary,
                     ),
               ),
             ],
@@ -196,13 +197,13 @@ class _RiskList extends StatelessWidget {
               color: AppColors.riskHigh,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(Icons.delete_outline, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Xoá',
-                    style: TextStyle(
+                const Icon(Icons.delete_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(AppLocalizations.of(context)!.knownRisksSwipeDelete,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                     )),
@@ -240,7 +241,7 @@ class _RiskList extends StatelessWidget {
                     Text(
                       VietnameseBank.fromCode(r.bankCode).shortName,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.textTertiary,
+                            color: AppColors.of(context).textTertiary,
                           ),
                     ),
                   if (r.summary.isNotEmpty)
@@ -252,7 +253,7 @@ class _RiskList extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: AppColors.of(context).textSecondary,
                             ),
                       ),
                     ),
@@ -272,22 +273,20 @@ class _RiskList extends StatelessWidget {
   }
 
   Future<bool> _confirmDelete(BuildContext context, KnownRisk r) async {
+    final l = AppLocalizations.of(context)!;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Xoá khỏi cơ sở dữ liệu?'),
-        content: Text(
-          '${r.value} sẽ bị xoá khỏi Supabase. Mọi thiết bị khác cũng sẽ '
-          'không nhận được entry này khi đồng bộ.',
-        ),
+        title: Text(l.knownRisksDeleteTitle),
+        content: Text(l.knownRisksDeleteBody(r.value)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Huỷ'),
+            child: Text(l.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xoá', style: TextStyle(color: Colors.red)),
+            child: Text(l.knownRisksSwipeDelete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -301,8 +300,8 @@ class _RiskList extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(success
-            ? 'Đã xoá ${r.value}.'
-            : 'Không xoá được: ${LocalRiskService().lastRefreshError ?? ""}'),
+            ? l.knownRisksDeletedSnack(r.value)
+            : l.knownRisksDeleteFail(LocalRiskService().lastRefreshError ?? '')),
       ),
     );
     return success;
@@ -365,7 +364,7 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.service.lastRefreshError ?? 'Lưu thất bại.'),
+          content: Text(widget.service.lastRefreshError ?? AppLocalizations.of(context)!.addDialogSaveFail),
         ),
       );
     }
@@ -373,8 +372,9 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: const Text('Thêm vào cơ sở dữ liệu'),
+      title: Text(l.addDialogTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -382,13 +382,13 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
           children: [
             DropdownButtonFormField<CheckTarget>(
               initialValue: _target,
-              decoration: const InputDecoration(labelText: 'Loại'),
-              items: const [
+              decoration: InputDecoration(labelText: l.addDialogType),
+              items: [
                 DropdownMenuItem(
-                    value: CheckTarget.phone, child: Text('Số điện thoại')),
+                    value: CheckTarget.phone, child: Text(l.addDialogTypePhone)),
                 DropdownMenuItem(
-                    value: CheckTarget.bankAccount, child: Text('Tài khoản NH')),
-                DropdownMenuItem(value: CheckTarget.url, child: Text('Đường dẫn')),
+                    value: CheckTarget.bankAccount, child: Text(l.addDialogTypeBank)),
+                DropdownMenuItem(value: CheckTarget.url, child: Text(l.addDialogTypeUrl)),
               ],
               onChanged: _saving
                   ? null
@@ -404,7 +404,7 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
               DropdownButtonFormField<VietnameseBank>(
                 initialValue: _selectedBank,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Ngân hàng'),
+                decoration: InputDecoration(labelText: l.addDialogBank),
                 items: [
                   ...VietnameseBanks.all.map(
                     (b) => DropdownMenuItem(
@@ -421,24 +421,24 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _valueCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Giá trị',
-                hintText: 'VD: 0888888888 / vietcombank-online.xyz',
+              decoration: InputDecoration(
+                labelText: l.addDialogValue,
+                hintText: l.addDialogValueHint,
               ),
               enabled: !_saving,
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<RiskLevel>(
               initialValue: _level,
-              decoration: const InputDecoration(labelText: 'Mức rủi ro'),
-              items: const [
+              decoration: InputDecoration(labelText: l.addDialogRisk),
+              items: [
                 DropdownMenuItem(
-                    value: RiskLevel.scam, child: Text('Lừa đảo (scam)')),
+                    value: RiskLevel.scam, child: Text(l.addDialogRiskScam)),
                 DropdownMenuItem(
                     value: RiskLevel.suspicious,
-                    child: Text('Nghi ngờ (suspicious)')),
+                    child: Text(l.addDialogRiskSuspicious)),
                 DropdownMenuItem(
-                    value: RiskLevel.safe, child: Text('An toàn (safe)')),
+                    value: RiskLevel.safe, child: Text(l.addDialogRiskSafe)),
               ],
               onChanged: _saving
                   ? null
@@ -478,17 +478,15 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
             ),
             TextField(
               controller: _summaryCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Tóm tắt (1 câu)',
-              ),
+              decoration: InputDecoration(labelText: l.addDialogSummary),
               maxLines: 2,
               enabled: !_saving,
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _reasonCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Lý do (mỗi dòng 1 ý)',
+              decoration: InputDecoration(
+                labelText: l.addDialogReasons,
                 alignLabelWithHint: true,
               ),
               maxLines: 4,
@@ -500,7 +498,7 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context, false),
-          child: const Text('Huỷ'),
+          child: Text(l.cancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,
@@ -510,7 +508,7 @@ class _AddRiskDialogState extends State<_AddRiskDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Lưu'),
+              : Text(l.addDialogSave),
         ),
       ],
     );

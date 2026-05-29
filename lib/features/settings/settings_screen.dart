@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/i18n/app_strings.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../services/settings_service.dart';
 
 /// Settings screen — reachable from the home app bar gear icon.
@@ -12,21 +12,21 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsService>();
-    final strings = _S(locale: settings.locale);
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(strings.settingsTitle),
+        title: Text(l.settingsTitle),
       ),
       body: ListView(
         children: [
           // ── Appearance ──────────────────────────────────────────
-          _SectionHeader(strings.settingsAppearance),
+          _SectionHeader(l.settingsAppearance),
           _SegmentedPicker(
             labels: [
-              strings.settingsLight,
-              strings.settingsDark,
-              strings.settingsSystem,
+              l.settingsLight,
+              l.settingsDark,
+              l.settingsSystem,
             ],
             selectedIndex: switch (settings.themeMode) {
               ThemeMode.light => 0,
@@ -45,11 +45,11 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ── Language ────────────────────────────────────────────
-          _SectionHeader(strings.settingsLanguage),
+          _SectionHeader(l.settingsLanguage),
           _SegmentedPicker(
             labels: [
-              strings.settingsLanguageVi,
-              strings.settingsLanguageEn,
+              l.settingsLanguageVi,
+              l.settingsLanguageEn,
             ],
             selectedIndex: settings.locale == 'en' ? 1 : 0,
             onSelected: (i) {
@@ -59,10 +59,10 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ── Behavior ────────────────────────────────────────────
-          _SectionHeader(strings.settingsBehavior),
+          _SectionHeader(l.settingsBehavior),
           _SwitchTile(
-            title: strings.settingsPreventMinimize,
-            subtitle: strings.settingsPreventMinimizeDesc,
+            title: l.settingsPreventMinimize,
+            subtitle: l.settingsPreventMinimizeDesc,
             value: settings.preventMinimize,
             onChanged: (v) => settings.setPreventMinimize(v),
           ),
@@ -70,33 +70,13 @@ class SettingsScreen extends StatelessWidget {
 
           // ── About ───────────────────────────────────────────────
           _AboutCard(
-            appName: strings.settingsAppName,
-            dataResetLabel: strings.settingsDataReset,
+            appName: l.settingsAppName,
+            dataResetLabel: l.settingsDataReset,
           ),
         ],
       ),
     );
   }
-}
-
-/// Per-locale strings for the settings screen to avoid rebuild noise.
-class _S {
-  _S({required String locale}) : _locale = locale;
-  final String _locale;
-
-  String get settingsTitle => AppStrings.of('settings_title', _locale);
-  String get settingsAppearance => AppStrings.of('settings_appearance', _locale);
-  String get settingsLight => AppStrings.of('settings_light', _locale);
-  String get settingsDark => AppStrings.of('settings_dark', _locale);
-  String get settingsSystem => AppStrings.of('settings_system', _locale);
-  String get settingsLanguage => AppStrings.of('settings_language', _locale);
-  String get settingsLanguageVi => AppStrings.of('settings_language_vi', _locale);
-  String get settingsLanguageEn => AppStrings.of('settings_language_en', _locale);
-  String get settingsAppName => AppStrings.of('settings_app_name', _locale);
-  String get settingsDataReset => AppStrings.of('settings_data_reset', _locale);
-  String get settingsBehavior => AppStrings.of('settings_behavior', _locale);
-  String get settingsPreventMinimize => AppStrings.of('settings_prevent_minimize', _locale);
-  String get settingsPreventMinimizeDesc => AppStrings.of('settings_prevent_minimize_desc', _locale);
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -169,9 +149,9 @@ class _SwitchTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.of(context).border),
         ),
         child: SwitchListTile(
           contentPadding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
@@ -202,16 +182,16 @@ class _AboutCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.shield, color: AppColors.primary, size: 24),
+              Icon(Icons.shield, color: AppColors.of(context).primary, size: 24),
               const SizedBox(width: 12),
               Text(
                 appName,
@@ -241,28 +221,27 @@ class _AboutCard extends StatelessWidget {
   }
 
   void _showResetDialog(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(dataResetLabel),
-        content: Text(
-          'Hành động này sẽ xoá toàn bộ dữ liệu trên máy, bao gồm lịch sử, danh sách chặn và cài đặt. Tiếp tục?',
-        ),
+        content: Text(l.settingsResetDialogBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Huỷ'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tính năng này sẽ được bổ sung sau.'),
+                SnackBar(
+                  content: Text(l.settingsResetComingSoon),
                 ),
               );
             },
-            child: const Text('Xác nhận'),
+            child: Text(l.confirm),
           ),
         ],
       ),

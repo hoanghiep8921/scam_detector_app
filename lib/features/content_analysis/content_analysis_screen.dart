@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/media_attachment.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../shared/widgets/scanning_overlay.dart';
 import '../result/result_screen.dart';
 import '../scam_check/scam_check_provider.dart';
@@ -56,7 +57,7 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
     if (text == null || text.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Clipboard rỗng')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.contentClipboardEmpty)),
       );
       return;
     }
@@ -64,8 +65,9 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
   }
 
   Future<void> _pickImages({required ImageSource source}) async {
+    final l = AppLocalizations.of(context)!;
     if (_imageCount >= _maxImageCount) {
-      _snack('Tối đa $_maxImageCount ảnh / lần phân tích.');
+      _snack(l.attachMaxImages(_maxImageCount));
       return;
     }
     try {
@@ -88,13 +90,15 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
         await _addAttachment(f, MediaKind.image, 'image/jpeg');
       }
     } catch (e) {
-      _snack('Không chọn được ảnh: $e');
+      if (!mounted) return;
+      _snack(AppLocalizations.of(context)!.attachPickImageFail(e.toString()));
     }
   }
 
   Future<void> _pickVideo() async {
+    final l = AppLocalizations.of(context)!;
     if (_hasVideo) {
-      _snack('Đã có 1 video — chỉ phân tích 1 video / lần.');
+      _snack(l.attachMaxVideo);
       return;
     }
     try {
@@ -105,7 +109,8 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
       if (f == null) return;
       await _addAttachment(f, MediaKind.video, _detectVideoMime(f.name));
     } catch (e) {
-      _snack('Không chọn được video: $e');
+      if (!mounted) return;
+      _snack(AppLocalizations.of(context)!.attachPickVideoFail(e.toString()));
     }
   }
 
@@ -125,10 +130,7 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
   ) async {
     final bytes = await file.readAsBytes();
     if (_totalBytes + bytes.length > _maxBytes) {
-      _snack(
-        'Vượt quá tổng dung lượng cho phép (~18 MB). '
-        'Hãy chọn file nhỏ hơn hoặc bớt media.',
-      );
+      _snack(AppLocalizations.of(context)!.attachSizeExceeded);
       return;
     }
     if (!mounted) return;
@@ -154,20 +156,23 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
   }
 
   Future<void> _submit() async {
+    final l = AppLocalizations.of(context)!;
     final text = _controller.text.trim();
     if (text.isEmpty && _attachments.isEmpty) {
-      _snack('Nhập text hoặc đính kèm ảnh / video để AI phân tích.');
+      _snack(l.contentEmptyError);
       return;
     }
     if (text.length < 5 && text.isNotEmpty && _attachments.isEmpty) {
-      _snack('Text quá ngắn (tối thiểu 5 ký tự) hoặc kèm thêm ảnh.');
+      _snack(l.contentTextTooShort);
       return;
     }
     FocusScope.of(context).unfocus();
+    final locale = Localizations.localeOf(context).languageCode;
     final result = await context.read<ScamCheckProvider>().check(
           target: CheckTarget.content,
           input: text,
           attachments: List.unmodifiable(_attachments),
+          locale: locale,
         );
     if (!mounted || result == null) return;
     Navigator.of(context).push(
@@ -177,13 +182,14 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final loading = context.watch<ScamCheckProvider>().isLoading;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Phân tích nội dung'),
+        title: Text(l.contentTitle),
         actions: [
           IconButton(
-            tooltip: 'Dán từ clipboard',
+            tooltip: l.contentPasteTooltip,
             icon: const Icon(Icons.content_paste),
             onPressed: _pasteFromClipboard,
           ),
@@ -196,25 +202,23 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               children: [
                 Text(
-                  'Phân tích bằng AI đa góc nhìn',
+                  l.contentHeadline,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Dán tin nhắn, mô tả cuộc gọi hoặc đính kèm ảnh / video. '
-                  'Gemini đọc cả OCR trong ảnh + nội dung video để phân tích '
-                  'theo 3 góc: ngôn ngữ học, an ninh mạng và tâm lý xã hội.',
+                  l.contentSubtitle,
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
-                      ?.copyWith(color: AppColors.textSecondary),
+                      ?.copyWith(color: AppColors.of(context).textSecondary),
                 ),
                 const SizedBox(height: 18),
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: AppColors.of(context).surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: AppColors.of(context).border),
                   ),
                   padding: const EdgeInsets.all(4),
                   child: TextField(
@@ -229,12 +233,11 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       contentPadding: const EdgeInsets.all(14),
-                      hintText:
-                          'VD: "Vietcombank xin chào quý khách, tài khoản của quý khách phát sinh giao dịch lạ..."',
+                      hintText: l.contentHint,
                       hintMaxLines: 4,
                       hintStyle: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textTertiary,
+                        color: AppColors.of(context).textTertiary,
                         height: 1.45,
                       ),
                     ),
@@ -254,7 +257,7 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
                 ElevatedButton.icon(
                   onPressed: loading ? null : _submit,
                   icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Phân tích bằng AI'),
+                  label: Text(l.contentAnalyzeBtn),
                 ),
                 const SizedBox(height: 18),
                 _ExampleCards(onTap: (text) {
@@ -266,8 +269,8 @@ class _ContentAnalysisScreenState extends State<ContentAnalysisScreen> {
               Positioned.fill(
                 child: ScanningOverlay(
                   message: _attachments.isEmpty
-                      ? 'Gemini đang phân tích nội dung…'
-                      : 'Gemini đang đọc ảnh / video + phân tích…',
+                      ? l.contentOverlayText
+                      : l.contentOverlayMedia,
                 ),
               ),
           ],
@@ -306,27 +309,28 @@ class _AttachmentBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final hasAny = attachments.isNotEmpty;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.attach_file,
-                  size: 18, color: AppColors.primary),
+              Icon(Icons.attach_file,
+                  size: 18, color: AppColors.of(context).primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   hasAny
-                      ? 'Đã đính kèm ${attachments.length} (${_formatSize(totalBytes)} / ${_formatSize(maxBytes)})'
-                      : 'Đính kèm ảnh / video (tuỳ chọn)',
+                      ? l.attachLabelCount(attachments.length, _formatSize(totalBytes), _formatSize(maxBytes))
+                      : l.attachLabel,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -341,17 +345,17 @@ class _AttachmentBar extends StatelessWidget {
             children: [
               _PickerChip(
                 icon: Icons.photo_library_outlined,
-                label: 'Thư viện',
+                label: l.attachGallery,
                 onTap: onPickGallery,
               ),
               _PickerChip(
                 icon: Icons.camera_alt_outlined,
-                label: 'Chụp ảnh',
+                label: l.attachCamera,
                 onTap: onPickCamera,
               ),
               _PickerChip(
                 icon: Icons.videocam_outlined,
-                label: 'Video',
+                label: l.attachVideo,
                 onTap: onPickVideo,
               ),
             ],
@@ -391,7 +395,7 @@ class _PickerChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.primaryContainer.withValues(alpha: 0.6),
+      color: AppColors.of(context).primaryContainer.withValues(alpha: 0.6),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         borderRadius: BorderRadius.circular(999),
@@ -401,14 +405,14 @@ class _PickerChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: AppColors.primary),
+              Icon(icon, size: 16, color: AppColors.of(context).primary),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  color: AppColors.of(context).primary,
                 ),
               ),
             ],
@@ -433,7 +437,7 @@ class _Thumb extends StatelessWidget {
           height: 84,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            color: AppColors.primaryContainer.withValues(alpha: 0.3),
+            color: AppColors.of(context).primaryContainer.withValues(alpha: 0.3),
           ),
           clipBehavior: Clip.antiAlias,
           child: attachment.kind == MediaKind.image
@@ -447,15 +451,15 @@ class _Thumb extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.movie_outlined,
-                          color: AppColors.primary, size: 28),
+                      Icon(Icons.movie_outlined,
+                          color: AppColors.of(context).primary, size: 28),
                       const SizedBox(height: 4),
                       Text(
                         attachment.sizeLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                          color: AppColors.of(context).primary,
                         ),
                       ),
                     ],
@@ -487,42 +491,25 @@ class _ExampleCards extends StatelessWidget {
   const _ExampleCards({required this.onTap});
   final ValueChanged<String> onTap;
 
-  static const _examples = [
-    (
-      'Mạo danh ngân hàng',
-      'Vietcombank thông báo: tài khoản của quý khách bị khoá do nghi ngờ '
-          'gian lận. Vui lòng nhấn link sau để xác minh: '
-          'http://vcb-online-secure.xyz/login. Nếu không xác minh trong 30 '
-          'phút, mọi giao dịch sẽ bị huỷ.'
-    ),
-    (
-      'CTV Shopee lãi cao',
-      'Em chào anh/chị, em là tuyển dụng CTV Shopee. Anh/chị chỉ cần đặt '
-          'đơn ảo, công ty hoàn lại tiền và cộng thêm 15% hoa hồng. Một '
-          'ngày dễ kiếm 500-800k. Anh/chị quan tâm em gửi link nhóm Telegram.'
-    ),
-    (
-      'Giả công an',
-      'Đồng chí, đây là Đại uý Nguyễn Văn A — Phòng Cảnh sát Hình sự. '
-          'Tài khoản của đồng chí có liên quan đường dây ma tuý xuyên quốc '
-          'gia. Đồng chí phải chuyển toàn bộ tiền vào tài khoản tạm giữ '
-          'của Bộ Công an để phục vụ điều tra trong 1 tiếng.'
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final examples = [
+      (l.exampleBankTitle, l.exampleBankBody),
+      (l.exampleShopeeTitle, l.exampleShopeeBody),
+      (l.examplePoliceTitle, l.examplePoliceBody),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Hoặc thử với mẫu có sẵn',
+          l.exampleSectionLabel,
           style: Theme.of(context).textTheme.labelLarge,
         ),
         const SizedBox(height: 8),
-        for (final ex in _examples) ...[
+        for (final ex in examples) ...[
           Material(
-            color: AppColors.surface,
+            color: AppColors.of(context).surface,
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
@@ -530,14 +517,14 @@ class _ExampleCards extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: AppColors.of(context).border),
                 ),
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.format_quote_outlined,
-                        size: 18, color: AppColors.primary),
+                    Icon(Icons.format_quote_outlined,
+                        size: 18, color: AppColors.of(context).primary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -557,8 +544,8 @@ class _ExampleCards extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right,
-                        color: AppColors.textTertiary),
+                    Icon(Icons.chevron_right,
+                        color: AppColors.of(context).textTertiary),
                   ],
                 ),
               ),

@@ -1,0 +1,421 @@
+{
+  "@@locale": "en",
+
+  "appName": "Scam Guard",
+  "navHome": "Home",
+  "navCheck": "Check",
+  "navHistory": "History",
+  "navProtect": "Protect",
+
+  "tooltipNotifications": "Notifications",
+  "tooltipSettings": "Settings",
+  "tooltipCopy": "Copy",
+  "tooltipRefresh": "Reload from server",
+  "tooltipDeleteAll": "Delete all",
+  "tooltipResync": "Re-sync from server",
+
+  "homeControlCenter": "Control Center",
+  "homeRecentActivity": "Recent Activity",
+  "homeNoActivity": "No checks yet. Try entering any phone number in the Check tab.",
+
+  "homeCheckPhone": "Check phone number",
+  "homeCheckPhoneSub": "Match against scam list + AI analysis",
+  "homeCheckBank": "Check bank account",
+  "homeCheckBankSub": "Verify account number before transferring money",
+  "homeCheckUrl": "Analyze URL",
+  "homeCheckUrlSub": "Detect phishing URLs and brand impersonation",
+  "homeCheckContent": "Analyze content / message",
+  "homeCheckContentSub": "Paste SMS, email, call description — AI multi-angle analysis",
+
+  "statChecked": "Checked",
+  "statSafe": "Safe",
+  "statScam": "Scam",
+
+  "heroTitle": "Real-Time Protection",
+  "heroSubtitleIos": "iOS only supports manual checks — call screening requires Android.",
+  "heroSubtitleActive": "AI is matching every incoming call against the on-device scam list.",
+  "heroSubtitleInactive": "Enable to let Scam Detector auto-block calls from known scam numbers.",
+  "heroStatusChecking": "Checking…",
+  "heroStatusIos": "Manual check only (iOS)",
+  "heroStatusActive": "Active",
+  "heroStatusInactive": "Inactive",
+  "heroEnableBtn": "Enable now",
+  "heroEnabledSnack": "Real-time protection enabled.",
+  "heroPermissionSnack": "You need to grant call screening permission to enable protection.",
+
+  "checkTitle": "Scam Guard",
+  "checkVerifyTitle": "Verify target",
+  "checkSubmitBtn": "Check now",
+  "checkAnalyzeBtn": "Analyze with AI",
+  "checkEmptyError": "Please enter information to check.",
+  "checkValidationRequired": "Please enter information",
+  "checkValidationPhone": "Invalid phone number",
+  "checkValidationBank": "Invalid account number",
+  "checkValidationUrl": "Invalid URL",
+  "checkValidationContentShort": "Content too short (minimum 5 characters)",
+
+  "checkSubtitlePhone": "Cross-reference global risk lists and analyze scam psychology in real time.",
+  "checkSubtitleBank": "Check if the recipient account has been reported in scam cases.",
+  "checkSubtitleUrl": "Analyze domain structure and brand impersonation signals.",
+  "checkSubtitleContent": "Paste SMS, email or describe a situation — AI multi-angle analysis.",
+
+  "checkHintPhone": "+84 9XX XXX XXX",
+  "checkHintBank": "E.g. 1903 5762 8810",
+  "checkHintUrl": "E.g. vietcombank-online.xyz",
+  "checkHintContent": "E.g. \"Vietcombank notice: your account has been locked. Please visit http://vcb-verify.tk to verify within 10 minutes...\"",
+
+  "checkBankLabel": "Bank",
+  "checkBankHint": "Select the account's bank",
+  "checkBankHintOther": "Enter account number (6–30 digits)",
+  "checkBankValidationRange": "{bank} account numbers are usually {min}–{max} digits",
+  "@checkBankValidationRange": {
+    "placeholders": {
+      "bank": {"type": "String"},
+      "min": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+
+  "segPhone": "Phone",
+  "segBank": "Account",
+  "segUrl": "URL",
+  "segContent": "Content",
+
+  "engineTitle": "Hybrid Detection Engine",
+  "engineSubtitle": "Local blocklist  •  Gemini Flash AI",
+
+  "historyTile": "History",
+  "historyTileSub": "View previous checks",
+  "tipsTile": "Safety tips",
+  "tipsTileSub": "Never share OTP or PIN with anyone",
+
+  "reportTitle": "Report scam",
+  "reportSubPhone": "Help the community — report a fake or scam phone number.",
+  "reportSubBank": "Help the community — report a fake or scam bank account.",
+  "reportSubUrl": "Help the community — report a fake or scam URL.",
+  "reportBtn": "Report",
+  "reportDialogTitle": "Report scam",
+  "reportDialogLabelPhone": "Enter the phone number you want to report:",
+  "reportDialogLabelBank": "Enter the account number you want to report:",
+  "reportDialogLabelUrl": "Enter the URL you want to report:",
+  "reportDialogDesc": "Short description (optional):",
+  "reportDialogDescHint": "E.g. Impersonating a bank to request a transfer...",
+  "reportSuccess": "Report submitted. Thank you for contributing to the community!",
+  "reportFail": "Failed to submit report. Please try again.",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "send": "Submit report",
+
+  "resultTitle": "Analysis result",
+  "resultCopied": "Result copied",
+  "resultShareReasons": "Reasons:",
+  "resultWarningReasons": "Warning reasons",
+  "resultMultiAxis": "Multi-angle analysis",
+  "resultPsyVector": "Psychological vector analysis",
+  "resultRadarDesc": "Each axis represents a common psychological manipulation tactic (0–100). Larger area = higher manipulation level.",
+  "resultOpenLink": "Open link",
+  "resultGoHome": "Back to home",
+  "resultUrlWarning": "URL Warning",
+  "resultWarnDialogTitle": "Warning",
+  "resultWarnDialogContent": "This link is rated {level}. Are you sure you want to open it?",
+  "@resultWarnDialogContent": {
+    "placeholders": {
+      "level": {"type": "String"}
+    }
+  },
+  "resultWarnCancel": "Cancel",
+  "resultWarnOpen": "Open anyway",
+  "resultOpenFail": "Could not open link",
+
+  "aiCardTitle": "AI Behavioural Analysis",
+  "aiCardSubUnknown": "No offline / community data found. Let Gemini analyze the scenario, manipulation signals and psychological factors.",
+  "aiCardSubKnown": "Add behavioural analysis (urgency / fear / authority / greed) and detailed AI reasoning.",
+  "aiCtaUnknown": "Deep analysis with Gemini AI",
+  "aiCtaKnown": "Behavioural analysis with AI",
+  "aiCtaRedo": "Re-analyze with AI",
+  "aiAnalyzing": "Analyzing…",
+  "aiOverlayMsg": "Gemini is analyzing behavior…",
+
+  "axisLinguistic": "Linguistics",
+  "axisLinguisticSub": "Signals in wording / vocabulary",
+  "axisCyber": "Cybersecurity",
+  "axisCyberSub": "Technical / infrastructure signals",
+  "axisSocial": "Social psychology",
+  "axisSocialSub": "Persuasion tactics (Cialdini & emotional manipulation)",
+
+  "securityProtocolTitle": "Apply security protocol",
+  "securityProtocolBody": "Never share OTP, PIN or passwords with anyone. Report to your bank / authorities if you have already transferred money.",
+
+  "riskSafe": "Safe",
+  "riskSuspicious": "Suspicious",
+  "riskScam": "Scam",
+  "riskUnknown": "Unknown",
+
+  "targetPhone": "Phone number",
+  "targetBank": "Bank account",
+  "targetUrl": "URL",
+  "targetContent": "Content",
+
+  "historyScreenTitle": "Check history",
+  "historyEmpty": "No checks yet",
+  "historyDeleteAllConfirmTitle": "Delete all history?",
+  "historyDeleteAllConfirmBody": "This action cannot be undone.",
+  "historyDeleteBtn": "Delete",
+
+  "notifTitle": "Notifications",
+  "notifEmpty": "No calls have been processed by CallScreening yet.\nWhen a number on the scam list calls, you will see it here.",
+  "notifCallBlocked": "Call blocked",
+  "notifCallSuspicious": "Suspicious call",
+
+  "callScreenTitle": "Call screening",
+  "callScreenOfflineList": "Offline warning list",
+  "callScreenScamCount": "Scam numbers",
+  "callScreenSuspiciousCount": "Suspicious numbers",
+  "callScreenResync": "Re-sync from server",
+  "callScreenEnableBtn": "Enable call screening",
+  "callScreenEnabledSnack": "Call screening enabled.",
+  "callScreenPermissionSnack": "You need to grant call screening permission to use this feature.",
+  "callScreenResyncSnack": "Loaded {count} entries from server • {scam} blocked / {suspicious} warned.",
+  "@callScreenResyncSnack": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "scam": {"type": "int"},
+      "suspicious": {"type": "int"}
+    }
+  },
+  "callScreenResyncFail": "{error} (using cache: {scam} + {suspicious}).",
+  "@callScreenResyncFail": {
+    "placeholders": {
+      "error": {"type": "String"},
+      "scam": {"type": "int"},
+      "suspicious": {"type": "int"}
+    }
+  },
+  "callScreenNoServer": "Cannot connect to server",
+
+  "callStatusAndroidOnly": "Feature only available on Android",
+  "callStatusAndroidOnlyBody": "CallScreeningService is an Android-only API (10+). On iOS only the manual Check tab is available.",
+  "callStatusActive": "Call screening is active",
+  "callStatusActiveBody": "Every incoming call will be matched against the on-device scam list. Scam calls will be rejected; suspicious calls will include a warning notification.",
+  "callStatusInactive": "Call screening is inactive",
+  "callStatusInactiveBody": "Tap \"Enable call screening\" and select Scam Detector in the system dialog to grant screening permission.",
+  "callScreenNote": "Call screening uses offline data in the app and does not send your phone number externally. Requires Android 10 or later.",
+
+  "navTileBlocklist": "Offline blocking list",
+  "navTileBlocklistSub": "View phone numbers CallScreening is currently monitoring on this device.",
+  "navTileKnownRisks": "Scam database",
+  "navTileKnownRisksSub": "Browse / add / delete risky phone numbers, accounts and URLs on Supabase.",
+  "navTileReset": "Reset all app data",
+  "navTileResetSub": "Delete history, offline blocklist, cache and device id. Start fresh.",
+  "navTileSentry": "Send test event to Sentry",
+  "navTileSentrySub": "Fire 1 message + 1 exception to confirm crash reporting is working.",
+  "sentrySnack": "Test event sent to Sentry. Check your sentry.io dashboard to confirm.",
+
+  "resetDialogTitle": "Reset all app data?",
+  "resetDialogBody": "All check history, offline lists, cache and device id will be deleted. This action cannot be undone.",
+  "resetDialogRemoteCheck": "Also delete history on Supabase",
+  "resetDialogRemoteCheckSub": "Uncheck to keep cloud history and only clear local data.",
+  "resetBtn": "Reset",
+  "resetDoneSnack": "All app data has been reset.",
+
+  "blocklistTitle": "Offline blocking list",
+  "blocklistSummary": "{total} numbers being monitored",
+  "@blocklistSummary": {
+    "placeholders": {
+      "total": {"type": "int"}
+    }
+  },
+  "blocklistSummarySub": "{scam} numbers will be blocked, {suspicious} numbers will show a warning.",
+  "@blocklistSummarySub": {
+    "placeholders": {
+      "scam": {"type": "int"},
+      "suspicious": {"type": "int"}
+    }
+  },
+  "blocklistSectionScam": "Numbers to be blocked (scam)",
+  "blocklistSectionSuspicious": "Numbers with warning (suspicious)",
+  "blocklistEmpty": "No numbers in the offline list. Tap the sync button in the top right to download from the server.",
+  "blocklistSectionEmpty": "No numbers at this level.",
+  "blocklistNote": "This is the list of phone numbers downloaded to this device. CallScreeningService runs fully offline — no numbers are sent externally.",
+  "blocklistResyncSnack": "Synced {scam} scam numbers, {suspicious} suspicious numbers.",
+  "@blocklistResyncSnack": {
+    "placeholders": {
+      "scam": {"type": "int"},
+      "suspicious": {"type": "int"}
+    }
+  },
+
+  "knownRisksTitle": "Scam database",
+  "knownRisksTabPhone": "Phone ({count})",
+  "@knownRisksTabPhone": {
+    "placeholders": { "count": {"type": "int"} }
+  },
+  "knownRisksTabBank": "Account ({count})",
+  "@knownRisksTabBank": {
+    "placeholders": { "count": {"type": "int"} }
+  },
+  "knownRisksTabUrl": "URL ({count})",
+  "@knownRisksTabUrl": {
+    "placeholders": { "count": {"type": "int"} }
+  },
+  "knownRisksEmpty": "No data for this category.\nCheck your Supabase connection and tap reload.",
+  "knownRisksAddBtn": "Add",
+  "knownRisksAddedSnack": "Added to database.",
+  "knownRisksDeleteTitle": "Delete from database?",
+  "knownRisksDeleteBody": "{value} will be deleted from Supabase. Other devices will also stop receiving this entry on sync.",
+  "@knownRisksDeleteBody": {
+    "placeholders": { "value": {"type": "String"} }
+  },
+  "knownRisksDeletedSnack": "Deleted {value}.",
+  "@knownRisksDeletedSnack": {
+    "placeholders": { "value": {"type": "String"} }
+  },
+  "knownRisksDeleteFail": "Could not delete: {error}",
+  "@knownRisksDeleteFail": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "knownRisksSwipeDelete": "Delete",
+  "addDialogTitle": "Add to database",
+  "addDialogType": "Type",
+  "addDialogTypePhone": "Phone number",
+  "addDialogTypeBank": "Bank account",
+  "addDialogTypeUrl": "URL",
+  "addDialogBank": "Bank",
+  "addDialogValue": "Value",
+  "addDialogValueHint": "E.g. 0888888888 / vietcombank-online.xyz",
+  "addDialogRisk": "Risk level",
+  "addDialogRiskScam": "Scam",
+  "addDialogRiskSuspicious": "Suspicious",
+  "addDialogRiskSafe": "Safe",
+  "addDialogSummary": "Summary (1 sentence)",
+  "addDialogReasons": "Reasons (one per line)",
+  "addDialogSave": "Save",
+  "addDialogSaveFail": "Save failed.",
+
+  "contentTitle": "Content analysis",
+  "contentHeadline": "AI multi-angle analysis",
+  "contentSubtitle": "Paste a message, describe a call, or attach images / video. Gemini reads OCR in images + video content to analyze from 3 angles: linguistics, cybersecurity and social psychology.",
+  "contentHint": "E.g. \"Vietcombank: your account has an unusual transaction...\"",
+  "contentPasteTooltip": "Paste from clipboard",
+  "contentClipboardEmpty": "Clipboard is empty",
+  "contentAnalyzeBtn": "Analyze with AI",
+  "contentEmptyError": "Enter text or attach images / video for AI analysis.",
+  "contentTextTooShort": "Text too short (minimum 5 characters) or attach an image.",
+  "contentOverlayText": "Gemini is analyzing content…",
+  "contentOverlayMedia": "Gemini is reading images / video + analyzing…",
+  "attachLabel": "Attach images / video (optional)",
+  "attachLabelCount": "{count} attached ({size} / {max})",
+  "@attachLabelCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "size": {"type": "String"},
+      "max": {"type": "String"}
+    }
+  },
+  "attachGallery": "Gallery",
+  "attachCamera": "Camera",
+  "attachVideo": "Video",
+  "attachMaxImages": "Maximum {max} images per analysis.",
+  "@attachMaxImages": {
+    "placeholders": { "max": {"type": "int"} }
+  },
+  "attachMaxVideo": "Already have 1 video — only 1 video per analysis.",
+  "attachSizeExceeded": "Total size limit exceeded (~18 MB). Choose smaller files or remove some media.",
+  "attachPickImageFail": "Could not pick image: {error}",
+  "@attachPickImageFail": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "attachPickVideoFail": "Could not pick video: {error}",
+  "@attachPickVideoFail": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "exampleSectionLabel": "Or try a sample",
+  "exampleBankTitle": "Bank impersonation",
+  "exampleBankBody": "Vietcombank notice: your account has been locked due to suspected fraud. Please click the link to verify: http://vcb-online-secure.xyz/login. If not verified within 30 minutes, all transactions will be cancelled.",
+  "exampleShopeeTitle": "Shopee affiliate scam",
+  "exampleShopeeBody": "Hi, I'm a Shopee recruiter. You just need to place fake orders, the company refunds the money plus 15% commission. Easy 500-800k per day. Interested? I'll send you the Telegram group link.",
+  "examplePoliceTitle": "Police impersonation",
+  "examplePoliceBody": "This is Captain Nguyen Van A — Criminal Investigation Department. Your account is linked to an international drug trafficking network. You must transfer all funds to the Ministry of Public Security's holding account within 1 hour for investigation.",
+
+  "incomingSecurityWarning": "Security Warning",
+  "incomingScamDetected": "AI DETECTED SCAM PATTERN",
+  "incomingSuspiciousDetected": "CAUTION — SUSPICIOUS SIGNALS",
+  "incomingCallLabel": "INCOMING CALL",
+  "incomingCopyTooltip": "Copy number",
+  "incomingCopied": "Copied",
+  "incomingRiskAnalysis": "RISK ANALYSIS",
+  "incomingConfidence": "CONFIDENCE",
+  "incomingBlockBtn": "BLOCK & HANG UP",
+  "incomingWarnBtn": "ACKNOWLEDGE WARNING",
+  "incomingTrustBtn": "I trust this number",
+  "incomingProtectedBy": "Actively protected by Scam Detector",
+  "incomingBlockedSnack": "Added {number} to the scam blocklist.",
+  "@incomingBlockedSnack": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+  "incomingRemovedSnack": "Removed {number} from the blocklist.",
+  "@incomingRemovedSnack": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+  "incomingNotInListSnack": "{number} is not in the offline list.",
+  "@incomingNotInListSnack": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+
+  "settingsTitle": "Settings",
+  "settingsAppearance": "Appearance",
+  "settingsLight": "Light",
+  "settingsDark": "Dark",
+  "settingsSystem": "System default",
+  "settingsLanguage": "Language",
+  "settingsLanguageVi": "Tiếng Việt",
+  "settingsLanguageEn": "English",
+  "settingsBehavior": "Navigation",
+  "settingsPreventMinimize": "Prevent minimize on Back",
+  "settingsPreventMinimizeDesc": "Back navigates to previous screen instead of exiting.",
+  "settingsAbout": "About",
+  "settingsAppName": "Scam Guard",
+  "settingsDataReset": "Reset all data",
+  "settingsResetDialogBody": "This will delete all data on this device, including history, blocklist and settings. Continue?",
+  "settingsResetComingSoon": "This feature will be added later.",
+
+  "checkEmptyInputError": "Please enter information to check.",
+  "screenedCallBlockedSummary": "Call automatically blocked — matched the scam list.",
+  "screenedCallWarnedSummary": "Suspicious call — warned but not blocked.",
+  "screenedCallBlockedReason": "CallScreeningService blocked the call from {number}.",
+  "@screenedCallBlockedReason": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+  "screenedCallWarnedReason": "CallScreeningService flagged the call from {number}.",
+  "@screenedCallWarnedReason": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+  "screenedCallOfflineReason": "Number matched the offline list synced from Scam Detector.",
+
+  "incomingCallSummary": "Call from a number with {label} signals. Be cautious if you answer.",
+  "@incomingCallSummary": {
+    "placeholders": { "label": {"type": "String"} }
+  },
+  "incomingCallScreenedReason": "CallScreeningService detected a match in the offline list.",
+
+  "checkBankDigits": "{count} digits",
+  "@checkBankDigits": {
+    "placeholders": { "count": {"type": "int"} }
+  },
+  "checkBankDigitRange": "{min}–{max} digits",
+  "@checkBankDigitRange": {
+    "placeholders": {
+      "min": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+  "checkBankHintWithRange": "E.g. {bank} — {range}",
+
+  "riskScoreLabel": "RISK SCORE",
+  "radarPressure": "Pressure",
+  "radarAuthority": "Authority",
+  "radarGreed": "Greed",
+  "radarFear": "Fear",
+  "scanningDefaultMessage": "Analyzing with AI…",
+  "scanningSubtitle": "Gemini is analyzing from multiple angles — 2–5 seconds."
+}

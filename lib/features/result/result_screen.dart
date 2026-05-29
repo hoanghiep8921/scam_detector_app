@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../shared/widgets/risk_gauge.dart';
 import '../../shared/widgets/scanning_overlay.dart';
 import '../../shared/widgets/threat_radar_chart.dart';
@@ -31,28 +32,31 @@ class _ResultScreenState extends State<ResultScreen> {
 
   bool get _isUnknown => _result.riskLevel == RiskLevel.unknown;
 
-  String _shareText() => [
-        '[Scam Detector] ${_result.riskLevel.label} (${_result.riskScore}/100)',
-        '${_result.target.label}: ${_result.input}',
+  String _shareText() {
+    final l = AppLocalizations.of(context)!;
+    return [
+        '[Scam Detector] ${_result.riskLevel.localizedLabel(context)} (${_result.riskScore}/100)',
+        '${_result.target.localizedLabel(context)}: ${_result.input}',
         _result.summary,
         if (_result.reasons.isNotEmpty) ...[
           '',
-          'Lý do:',
+          l.resultShareReasons,
           ..._result.reasons.map((r) => '• $r'),
         ],
       ].join('\n');
+  }
 
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: _shareText()));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã sao chép kết quả')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.resultCopied)),
     );
   }
 
   Future<void> _runAi() async {
     final updated =
-        await context.read<ScamCheckProvider>().analyzeWithAi(_result);
+        await context.read<ScamCheckProvider>().analyzeWithAi(_result, locale: Localizations.localeOf(context).languageCode);
     if (!mounted || updated == null) return;
     setState(() => _result = updated);
   }
@@ -65,22 +69,22 @@ class _ResultScreenState extends State<ResultScreen> {
     if (uri == null) return;
     if (_result.riskLevel == RiskLevel.scam ||
         _result.riskLevel == RiskLevel.suspicious) {
+      final l = AppLocalizations.of(context)!;
       final ok = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text('Cảnh báo'),
+          title: Text(l.resultWarnDialogTitle),
           content: Text(
-            'Liên kết này được đánh giá ${_result.riskLevel.label.toLowerCase()}. '
-            'Bạn có chắc muốn mở?',
+            l.resultWarnDialogContent(_result.riskLevel.localizedLabel(context).toLowerCase()),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Huỷ'),
+              child: Text(l.resultWarnCancel),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Vẫn mở'),
+              child: Text(l.resultWarnOpen),
             ),
           ],
         ),
@@ -91,21 +95,22 @@ class _ResultScreenState extends State<ResultScreen> {
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không mở được liên kết')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.resultOpenFail)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final aiLoading = context.watch<ScamCheckProvider>().isAiLoading;
     final isScam = _result.riskLevel == RiskLevel.scam;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kết quả phân tích'),
+        title: Text(l.resultTitle),
         actions: [
           IconButton(
-            tooltip: 'Sao chép',
+            tooltip: l.tooltipCopy,
             icon: const Icon(Icons.copy_outlined),
             onPressed: _copy,
           ),
@@ -119,17 +124,10 @@ class _ResultScreenState extends State<ResultScreen> {
               children: [
                 _RiskHeader(result: _result),
                 const SizedBox(height: 16),
-                // Hide the target/input card when there's nothing meaningful
-                // to show (e.g. native screened-call records that lost their
-                // raw number, or placeholder rows). Avoids a visibly empty
-                // card on the result screen.
                 if (_result.input.trim().isNotEmpty) ...[
                   _TargetCard(result: _result),
                   const SizedBox(height: 16),
                 ],
-
-                // AI behavioural analysis CTA. Promoted when verdict is unknown
-                // (no local + no community data); otherwise a quieter card.
                 _AiAnalysisCard(
                   isUnknown: _isUnknown,
                   hasPsy: _hasPsy,
@@ -137,11 +135,10 @@ class _ResultScreenState extends State<ResultScreen> {
                   onTap: aiLoading ? null : _runAi,
                 ),
                 const SizedBox(height: 16),
-
                 if (_result.reasons.isNotEmpty) ...[
                   _SectionHeader(
                     icon: Icons.fact_check_outlined,
-                    title: 'Lý do cảnh báo',
+                    title: l.resultWarningReasons,
                   ),
                   const SizedBox(height: 8),
                   _ReasonsCard(
@@ -150,9 +147,6 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
-
-                // URL phishing highlights — shows the URL with suspicious
-                // fragments highlighted in red/orange.
                 if (_result.target == CheckTarget.url &&
                     _result.urlHighlights.isNotEmpty) ...[
                   _UrlHighlightCard(
@@ -161,22 +155,19 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
-
-                // Multi-axis behavioural analysis (linguistics / cybersecurity /
-                // social psychology). Hidden when no signals from any axis.
                 if (_result.linguisticSignals.isNotEmpty ||
                     _result.cyberSignals.isNotEmpty ||
                     _result.socialTactics.isNotEmpty) ...[
                   _SectionHeader(
                     icon: Icons.hub_outlined,
-                    title: 'Phân tích đa góc nhìn',
+                    title: l.resultMultiAxis,
                   ),
                   const SizedBox(height: 8),
                   if (_result.linguisticSignals.isNotEmpty)
                     _SignalCard(
                       icon: Icons.translate,
-                      title: 'Ngôn ngữ học',
-                      subtitle: 'Dấu hiệu trong cách diễn đạt / từ vựng',
+                      title: l.axisLinguistic,
+                      subtitle: l.axisLinguisticSub,
                       signals: _result.linguisticSignals,
                       accent: const Color(0xFF7B1FA2),
                     ),
@@ -184,8 +175,8 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 10),
                     _SignalCard(
                       icon: Icons.shield_moon_outlined,
-                      title: 'An ninh mạng',
-                      subtitle: 'Dấu hiệu kỹ thuật / hạ tầng',
+                      title: l.axisCyber,
+                      subtitle: l.axisCyberSub,
                       signals: _result.cyberSignals,
                       accent: const Color(0xFF00838F),
                     ),
@@ -194,26 +185,23 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 10),
                     _SignalCard(
                       icon: Icons.psychology_alt_outlined,
-                      title: 'Tâm lý học xã hội',
-                      subtitle:
-                          'Thủ thuật thuyết phục (Cialdini & thao túng cảm xúc)',
+                      title: l.axisSocial,
+                      subtitle: l.axisSocialSub,
                       signals: _result.socialTactics,
                       accent: const Color(0xFFC2185B),
                     ),
                   ],
                   const SizedBox(height: 16),
                 ],
-
                 if (_hasPsy) ...[
                   _SectionHeader(
                     icon: Icons.radar,
-                    title: 'Phân tích vector tâm lý',
+                    title: l.resultPsyVector,
                   ),
                   const SizedBox(height: 8),
                   _RadarCard(result: _result),
                   const SizedBox(height: 16),
                 ],
-
                 if (isScam) ...[
                   const _SecurityProtocolCallout(),
                   const SizedBox(height: 16),
@@ -222,7 +210,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   OutlinedButton.icon(
                     onPressed: _openUrl,
                     icon: const Icon(Icons.open_in_new),
-                    label: const Text('Mở liên kết'),
+                    label: Text(l.resultOpenLink),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -230,15 +218,13 @@ class _ResultScreenState extends State<ResultScreen> {
                   onPressed: () =>
                       Navigator.of(context).popUntil((r) => r.isFirst),
                   icon: const Icon(Icons.home_outlined),
-                  label: const Text('Về trang chủ'),
+                  label: Text(l.resultGoHome),
                 ),
               ],
             ),
             if (aiLoading)
-              const Positioned.fill(
-                child: ScanningOverlay(
-                  message: 'Gemini đang phân tích hành vi…',
-                ),
+              Positioned.fill(
+                child: ScanningOverlay(message: l.aiOverlayMsg),
               ),
           ],
         ),
@@ -262,28 +248,29 @@ class _AiAnalysisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final ctaLabel = hasPsy
-        ? 'Phân tích lại bằng AI'
+        ? l.aiCtaRedo
         : isUnknown
-            ? 'Phân tích sâu bằng AI Gemini'
-            : 'Phân tích hành vi bằng AI';
-    final subtitle = isUnknown
-        ? 'Chưa có dữ liệu offline / cộng đồng. Để Gemini phân tích kịch bản, dấu hiệu thao túng và các yếu tố tâm lý.'
-        : 'Bổ sung phân tích hành vi (urgency / fear / authority / greed) và lý do chi tiết từ AI.';
+            ? l.aiCtaUnknown
+            : l.aiCtaKnown;
+    final subtitle = isUnknown ? l.aiCardSubUnknown : l.aiCardSubKnown;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isUnknown
-              ? [AppColors.primary, AppColors.primaryDark]
-              : [
-                  AppColors.primaryContainer,
-                  AppColors.primaryContainer.withValues(alpha: 0.6),
-                ],
+        gradient: (isDark || !isUnknown) ? null : LinearGradient(
+          colors: [colors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        color: isDark
+            ? colors.surface
+            : (!isUnknown ? colors.primaryContainer : null),
+        border: isDark ? Border.all(color: colors.border) : null,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -293,18 +280,18 @@ class _AiAnalysisCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.auto_awesome,
-                color: isUnknown ? Colors.white : AppColors.primary,
+                color: isDark ? colors.primary : (isUnknown ? Colors.white : colors.primary),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Phân tích hành vi bằng AI',
+                  l.aiCardTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: isUnknown
-                            ? Colors.white
-                            : AppColors.onPrimaryContainer,
+                        color: isDark
+                            ? colors.textPrimary
+                            : (isUnknown ? Colors.white : colors.onPrimaryContainer),
                         fontWeight: FontWeight.w700,
                       ),
                 ),
@@ -315,9 +302,9 @@ class _AiAnalysisCard extends StatelessWidget {
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: isUnknown
-                      ? Colors.white.withValues(alpha: 0.85)
-                      : AppColors.textSecondary,
+                  color: isDark
+                      ? colors.textSecondary
+                      : (isUnknown ? Colors.white.withValues(alpha: 0.85) : colors.textSecondary),
                   height: 1.4,
                 ),
           ),
@@ -325,8 +312,8 @@ class _AiAnalysisCard extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onTap,
             style: ElevatedButton.styleFrom(
-              backgroundColor: isUnknown ? Colors.white : AppColors.primary,
-              foregroundColor: isUnknown ? AppColors.primary : Colors.white,
+              backgroundColor: isUnknown ? Colors.white : AppColors.of(context).primary,
+              foregroundColor: isUnknown ? AppColors.of(context).primary : Colors.white,
               minimumSize: const Size.fromHeight(48),
               shape: const StadiumBorder(),
               textStyle: const TextStyle(
@@ -340,11 +327,11 @@ class _AiAnalysisCard extends StatelessWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: isUnknown ? AppColors.primary : Colors.white,
+                      color: isUnknown ? AppColors.of(context).primary : Colors.white,
                     ),
                   )
                 : const Icon(Icons.psychology_outlined, size: 18),
-            label: Text(loading ? 'Đang phân tích…' : ctaLabel),
+            label: Text(loading ? l.aiAnalyzing : ctaLabel),
           ),
         ],
       ),
@@ -378,7 +365,7 @@ class _RiskHeader extends StatelessWidget {
                   Icon(result.riskLevel.icon, color: Colors.white, size: 16),
                   const SizedBox(width: 6),
                   Text(
-                    result.riskLevel.label.toUpperCase(),
+                    result.riskLevel.localizedLabel(context).toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -418,25 +405,25 @@ class _TargetCard extends StatelessWidget {
     };
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
-        border: const Border(
-          left: BorderSide(width: 4, color: AppColors.primary),
-          top: BorderSide(color: AppColors.border),
-          right: BorderSide(color: AppColors.border),
-          bottom: BorderSide(color: AppColors.border),
+        border: Border(
+          left: BorderSide(width: 4, color: AppColors.of(context).primary),
+          top: BorderSide(color: AppColors.of(context).border),
+          right: BorderSide(color: AppColors.of(context).border),
+          bottom: BorderSide(color: AppColors.of(context).border),
         ),
       ),
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary),
+          Icon(icon, color: AppColors.of(context).primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(result.target.label.toUpperCase(),
+                Text(result.target.localizedLabel(context).toUpperCase(),
                     style: Theme.of(context).textTheme.labelSmall),
                 const SizedBox(height: 2),
                 Text(
@@ -468,7 +455,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.primary),
+          Icon(icon, size: 18, color: AppColors.of(context).primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -505,12 +492,12 @@ class _SignalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
-        border: const Border(
-          top: BorderSide(color: AppColors.border),
-          right: BorderSide(color: AppColors.border),
-          bottom: BorderSide(color: AppColors.border),
+        border: Border(
+          top: BorderSide(color: AppColors.of(context).border),
+          right: BorderSide(color: AppColors.of(context).border),
+          bottom: BorderSide(color: AppColors.of(context).border),
         ),
       ),
       child: Container(
@@ -646,7 +633,7 @@ class _UrlHighlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spans = _buildSpans();
+    final spans = _buildSpans(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -659,7 +646,7 @@ class _UrlHighlightCard extends StatelessWidget {
                     color: AppColors.riskHigh, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Cảnh báo URL',
+                  AppLocalizations.of(context)!.resultUrlWarning,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -670,9 +657,9 @@ class _UrlHighlightCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
+                color: AppColors.of(context).surfaceContainerLow,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: AppColors.of(context).border),
               ),
               child: Wrap(
                 children: spans,
@@ -684,11 +671,11 @@ class _UrlHighlightCard extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildSpans() {
-    return _buildOrderedSpans();
+  List<Widget> _buildSpans(BuildContext context) {
+    return _buildOrderedSpans(context);
   }
 
-  List<Widget> _buildOrderedSpans() {
+  List<Widget> _buildOrderedSpans(BuildContext context) {
     final lowerUrl = url.toLowerCase();
     var cursor = 0;
 
@@ -722,10 +709,10 @@ class _UrlHighlightCard extends StatelessWidget {
       if (seg.start > cursor) {
         widgets.add(Text(
           url.substring(cursor, seg.start),
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'monospace',
             fontSize: 14,
-            color: AppColors.textPrimary,
+            color: AppColors.of(context).textPrimary,
           ),
         ));
       }
@@ -740,10 +727,10 @@ class _UrlHighlightCard extends StatelessWidget {
     if (cursor < url.length) {
       widgets.add(Text(
         url.substring(cursor),
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'monospace',
           fontSize: 14,
-          color: AppColors.textPrimary,
+          color: AppColors.of(context).textPrimary,
         ),
       ));
     }
@@ -836,8 +823,7 @@ class _RadarCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Mỗi trục là một thủ thuật tâm lý lừa đảo phổ biến (0–100). '
-              'Diện tích càng lớn, mức độ thao túng càng cao.',
+              AppLocalizations.of(context)!.resultRadarDesc,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
@@ -852,35 +838,37 @@ class _SecurityProtocolCallout extends StatelessWidget {
   const _SecurityProtocolCallout();
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primaryDark,
+        color: isDark ? colors.surface : AppColors.primaryDark,
+        border: isDark ? Border.all(color: colors.border) : null,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const Icon(Icons.shield, color: Colors.white, size: 28),
+          Icon(Icons.shield, color: isDark ? colors.primary : Colors.white, size: 28),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cần áp dụng quy trình bảo vệ',
+                  AppLocalizations.of(context)!.securityProtocolTitle,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white,
+                        color: isDark ? colors.textPrimary : Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Không cung cấp OTP, mã PIN, mật khẩu cho bất kỳ ai. '
-                  'Báo cáo cho ngân hàng / cơ quan chức năng nếu đã chuyển tiền.',
+                  AppLocalizations.of(context)!.securityProtocolBody,
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
-                      ?.copyWith(color: Colors.white70),
+                      ?.copyWith(color: isDark ? colors.textSecondary : Colors.white70),
                 ),
               ],
             ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// Color palette — derived from Stitch "Sentinel Assurance" design system.
+///
+/// Static constants are the light-mode values (kept for backward compat).
+/// Use [AppColors.of(context)] for adaptive colors that respond to dark mode.
 class AppColors {
   AppColors._();
 
@@ -35,4 +38,76 @@ class AppColors {
   static const Color outline = Color(0xFF767683);
   static const Color outlineVariant = Color(0xFFC6C5D4);
   static const Color border = Color(0xFFE0E4EA);
+
+  /// Adaptive color set based on current brightness.
+  static AdaptiveColors of(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? _dark : _light;
+  }
+
+  static const _light = AdaptiveColors(
+    background: Color(0xFFF9F9F9),
+    surface: Color(0xFFFFFFFF),
+    surfaceContainer: Color(0xFFEEEEEE),
+    surfaceContainerLow: Color(0xFFF3F3F3),
+    surfaceContainerHigh: Color(0xFFE8E8E8),
+    textPrimary: Color(0xFF1A1C1C),
+    textSecondary: Color(0xFF454652),
+    textTertiary: Color(0xFF767683),
+    border: Color(0xFFE0E4EA),
+    outlineVariant: Color(0xFFC6C5D4),
+    primary: Color(0xFF1A237E),
+    primaryContainer: Color(0xFFE0E0FF),
+    onPrimaryContainer: Color(0xFF000767),
+  );
+
+  // Facebook-inspired dark palette
+  static const _dark = AdaptiveColors(
+    background: Color(0xFF18191A),
+    surface: Color(0xFF242526),
+    surfaceContainer: Color(0xFF3A3B3C),
+    surfaceContainerLow: Color(0xFF2F3031),
+    surfaceContainerHigh: Color(0xFF4E4F50),
+    textPrimary: Color(0xFFE4E6EB),
+    textSecondary: Color(0xFFB0B3B8),
+    textTertiary: Color(0xFF8A8D91),
+    border: Color(0xFF3E4042),
+    outlineVariant: Color(0xFF4E4F50),
+    primary: Color(0xFF7B8CFF),
+    primaryContainer: Color(0xFF1A237E),
+    onPrimaryContainer: Color(0xFFE0E0FF),
+  );
+}
+
+/// Adaptive color values that change based on light/dark mode.
+class AdaptiveColors {
+  const AdaptiveColors({
+    required this.background,
+    required this.surface,
+    required this.surfaceContainer,
+    required this.surfaceContainerLow,
+    required this.surfaceContainerHigh,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textTertiary,
+    required this.border,
+    required this.outlineVariant,
+    required this.primary,
+    required this.primaryContainer,
+    required this.onPrimaryContainer,
+  });
+
+  final Color background;
+  final Color surface;
+  final Color surfaceContainer;
+  final Color surfaceContainerLow;
+  final Color surfaceContainerHigh;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textTertiary;
+  final Color border;
+  final Color outlineVariant;
+  final Color primary;
+  final Color primaryContainer;
+  final Color onPrimaryContainer;
 }

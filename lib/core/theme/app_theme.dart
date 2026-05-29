@@ -187,11 +187,12 @@ class AppTheme {
 
   static ThemeData get dark {
     final base = ThemeData.dark(useMaterial3: true);
-    const bgDark = Color(0xFF121214);
-    const surfaceDark = Color(0xFF1E1E22);
-    const textPrimaryDark = Color(0xFFE8E8EC);
-    const textSecondaryDark = Color(0xFFA8A8B0);
-    const borderDark = Color(0xFF333338);
+    const bgDark = Color(0xFF18191A);
+    const surfaceDark = Color(0xFF242526);
+    const cardDark = Color(0xFF3A3B3C);
+    const textPrimaryDark = Color(0xFFE4E6EB);
+    const textSecondaryDark = Color(0xFFB0B3B8);
+    const borderDark = Color(0xFF3E4042);
     final colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF7B8CFF),
       brightness: Brightness.dark,
@@ -224,9 +225,13 @@ class AppTheme {
           side: const BorderSide(color: borderDark),
         ),
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surfaceDark,
+        indicatorColor: const Color(0xFF1A237E),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceDark,
+        fillColor: cardDark,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
@@ -245,7 +250,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: Color(0xFF7B8CFF), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -255,7 +260,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF7B8CFF),
-          foregroundColor: Color(0xFF000767),
+          foregroundColor: const Color(0xFF000767),
           minimumSize: const Size.fromHeight(56),
           shape: const StadiumBorder(),
           elevation: 0,
@@ -285,8 +290,8 @@ class AppTheme {
   }
 
   static TextTheme _buildDarkTextTheme(TextTheme base) {
-    const textPrimaryDark = Color(0xFFE8E8EC);
-    const textSecondaryDark = Color(0xFFA8A8B0);
+    const textPrimaryDark = Color(0xFFE4E6EB);
+    const textSecondaryDark = Color(0xFFB0B3B8);
     return base.copyWith(
       displayLarge: base.displayLarge?.copyWith(
         color: textPrimaryDark,

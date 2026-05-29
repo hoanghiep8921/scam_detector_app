@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/scam_check_result.dart';
 import '../../data/models/vietnamese_bank.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../shared/widgets/scanning_overlay.dart';
 import '../content_analysis/content_analysis_screen.dart';
 import '../history/history_screen.dart';
@@ -41,32 +42,36 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
   TextEditingController get _controller => _controllers[_target]!;
 
   String? _validate(String? value) {
+    final l = AppLocalizations.of(context)!;
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Vui lòng nhập thông tin';
+    if (v.isEmpty) return l.checkValidationRequired;
     switch (_target) {
       case CheckTarget.phone:
         if (!RegExp(r'^[\d+\-\s()]{6,20}$').hasMatch(v)) {
-          return 'Số điện thoại không hợp lệ';
+          return l.checkValidationPhone;
         }
       case CheckTarget.bankAccount:
         final digits = v.replaceAll(RegExp(r'[\s\-]'), '');
         if (!RegExp(r'^\d{6,30}$').hasMatch(digits)) {
-          return 'Số tài khoản không hợp lệ';
+          return l.checkValidationBank;
         }
         if (_selectedBank != null && _selectedBank != VietnameseBank.other) {
           if (digits.length < _selectedBank!.minDigits ||
               digits.length > _selectedBank!.maxDigits) {
-            return 'Số tài khoản ${_selectedBank!.shortName} thường có '
-                '${_selectedBank!.minDigits}–${_selectedBank!.maxDigits} chữ số';
+            return l.checkBankValidationRange(
+              _selectedBank!.shortName,
+              _selectedBank!.minDigits,
+              _selectedBank!.maxDigits,
+            );
           }
         }
       case CheckTarget.url:
         if (!RegExp(r'\.[a-z]{2,}', caseSensitive: false).hasMatch(v)) {
-          return 'Đường dẫn không hợp lệ';
+          return l.checkValidationUrl;
         }
       case CheckTarget.content:
         if (v.length < 5) {
-          return 'Nội dung quá ngắn (tối thiểu 5 ký tự)';
+          return l.checkValidationContentShort;
         }
     }
     return null;
@@ -78,12 +83,24 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
     final bankCode = _target == CheckTarget.bankAccount
         ? _selectedBank?.code
         : null;
-    final result = await context.read<ScamCheckProvider>().check(
+    final provider = context.read<ScamCheckProvider>();
+    final locale = Localizations.localeOf(context).languageCode;
+    final result = await provider.check(
           target: _target,
           input: _controller.text,
           bankCode: bankCode,
+          locale: locale,
         );
-    if (!mounted || result == null) return;
+    if (!mounted) return;
+    if (result == null) {
+      final error = provider.error;
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $error')),
+        );
+      }
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ResultScreen(result: result)),
     );
@@ -91,17 +108,19 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loading = context.watch<ScamCheckProvider>().isLoading;
+    final l = AppLocalizations.of(context)!;
+    final provider = context.watch<ScamCheckProvider>();
+    final loading = provider.isLoading || provider.isAiLoading;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scam Guard'),
+        title: Text(l.checkTitle),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
+            icon: Icon(Icons.settings_outlined, color: AppColors.of(context).textSecondary),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
-            tooltip: 'Cài đặt',
+            tooltip: l.tooltipSettings,
           ),
         ],
       ),
@@ -132,19 +151,19 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                 const SizedBox(height: 32),
                 Center(
                   child: Text(
-                    'Xác minh đối tượng',
+                    l.checkVerifyTitle,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    _subtitleFor(_target),
+                    _subtitleFor(_target, l),
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
-                        ?.copyWith(color: AppColors.textSecondary),
+                        ?.copyWith(color: AppColors.of(context).textSecondary),
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -158,6 +177,7 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                 Form(
                   key: _formKey,
                   child: TextFormField(
+                    key: ValueKey(_target),
                     controller: _controller,
                     keyboardType: _keyboardFor(_target),
                     textInputAction: _target == CheckTarget.content
@@ -183,8 +203,8 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                     },
                     decoration: InputDecoration(
                       hintText: _target == CheckTarget.bankAccount
-                          ? _bankHint(_selectedBank)
-                          : _hintFor(_target),
+                          ? _bankHint(_selectedBank, l)
+                          : _hintFor(_target, l),
                       hintMaxLines: _target == CheckTarget.content ? 4 : 1,
                       hintStyle: _target == CheckTarget.content
                           ? const TextStyle(fontSize: 13, height: 1.45)
@@ -202,8 +222,8 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                       ? Icons.auto_awesome
                       : Icons.shield_outlined),
                   label: Text(_target == CheckTarget.content
-                      ? 'Phân tích bằng AI'
-                      : 'Kiểm tra ngay'),
+                      ? l.checkAnalyzeBtn
+                      : l.checkSubmitBtn),
                 ),
                 const SizedBox(height: 24),
                 const _DetectionEngineCard(),
@@ -215,8 +235,8 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                     Expanded(
                       child: _SecondaryTile(
                         icon: Icons.history,
-                        title: 'Lịch sử',
-                        subtitle: 'Xem các lượt đã kiểm tra',
+                        title: l.historyTile,
+                        subtitle: l.historyTileSub,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const HistoryScreen(),
@@ -228,8 +248,8 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
                     Expanded(
                       child: _SecondaryTile(
                         icon: Icons.info_outline,
-                        title: 'Mẹo bảo vệ',
-                        subtitle: 'Không cung cấp OTP, mã PIN cho ai',
+                        title: l.tipsTile,
+                        subtitle: l.tipsTileSub,
                         onTap: () {},
                       ),
                     ),
@@ -244,32 +264,27 @@ class _ScamCheckScreenState extends State<ScamCheckScreen> {
     );
   }
 
-  static String _subtitleFor(CheckTarget t) => switch (t) {
-        CheckTarget.phone =>
-          'Đối chiếu danh sách rủi ro toàn cầu và phân tích tâm lý lừa đảo theo thời gian thực.',
-        CheckTarget.bankAccount =>
-          'Kiểm tra số tài khoản nhận tiền có nằm trong các vụ lừa đảo đã được báo cáo.',
-        CheckTarget.url =>
-          'Phân tích cấu trúc tên miền và dấu hiệu giả mạo thương hiệu.',
-        CheckTarget.content =>
-          'Dán SMS, email hoặc mô tả tình huống — AI phân tích đa góc nhìn.',
+  static String _subtitleFor(CheckTarget t, AppLocalizations l) => switch (t) {
+        CheckTarget.phone => l.checkSubtitlePhone,
+        CheckTarget.bankAccount => l.checkSubtitleBank,
+        CheckTarget.url => l.checkSubtitleUrl,
+        CheckTarget.content => l.checkSubtitleContent,
       };
 
-  static String _bankHint(VietnameseBank? bank) {
-    if (bank == null) return 'VD: 1903 5762 8810';
-    if (bank == VietnameseBank.other) return 'Nhập số tài khoản (6–30 chữ số)';
+  static String _bankHint(VietnameseBank? bank, AppLocalizations l) {
+    if (bank == null) return l.checkHintBank;
+    if (bank == VietnameseBank.other) return l.checkBankHintOther;
     final range = bank.minDigits == bank.maxDigits
-        ? '${bank.minDigits} chữ số'
-        : '${bank.minDigits}–${bank.maxDigits} chữ số';
-    return 'VD: ${bank.shortName} — $range';
+        ? l.checkBankDigits(bank.minDigits)
+        : l.checkBankDigitRange(bank.minDigits, bank.maxDigits);
+    return l.checkBankHintWithRange(bank.shortName, range);
   }
 
-  static String _hintFor(CheckTarget t) => switch (t) {
-        CheckTarget.phone => '+84 9XX XXX XXX',
-        CheckTarget.bankAccount => 'VD: 1903 5762 8810',
-        CheckTarget.url => 'VD: vietcombank-online.xyz',
-        CheckTarget.content =>
-          'VD: "Vietcombank thông báo tài khoản của quý khách bị khoá. Vui lòng truy cập http://vcb-xacminh.tk để xác minh trong 10 phút..."',
+  static String _hintFor(CheckTarget t, AppLocalizations l) => switch (t) {
+        CheckTarget.phone => l.checkHintPhone,
+        CheckTarget.bankAccount => l.checkHintBank,
+        CheckTarget.url => l.checkHintUrl,
+        CheckTarget.content => l.checkHintContent,
       };
 
   static IconData _iconFor(CheckTarget t) => switch (t) {
@@ -301,7 +316,7 @@ class _SegmentedTargetSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.primaryContainer.withValues(alpha: 0.6),
+        color: AppColors.of(context).primaryContainer.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -332,10 +347,10 @@ class _SegmentTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = switch (target) {
-      CheckTarget.phone => 'Số ĐT',
-      CheckTarget.bankAccount => 'Tài khoản',
-      CheckTarget.url => 'Đường dẫn',
-      CheckTarget.content => 'Nội dung',
+      CheckTarget.phone => AppLocalizations.of(context)!.segPhone,
+      CheckTarget.bankAccount => AppLocalizations.of(context)!.segBank,
+      CheckTarget.url => AppLocalizations.of(context)!.segUrl,
+      CheckTarget.content => AppLocalizations.of(context)!.segContent,
     };
     final icon = switch (target) {
       CheckTarget.phone => Icons.phone_outlined,
@@ -343,12 +358,12 @@ class _SegmentTab extends StatelessWidget {
       CheckTarget.url => Icons.link,
       CheckTarget.content => Icons.text_snippet_outlined,
     };
-    final color = selected ? AppColors.primary : AppColors.textSecondary;
+    final color = selected ? AppColors.of(context).primary : AppColors.of(context).textSecondary;
     return Material(
-      color: selected ? AppColors.surface : Colors.transparent,
+      color: selected ? AppColors.of(context).surface : Colors.transparent,
       borderRadius: BorderRadius.circular(10),
       elevation: selected ? 1 : 0,
-      shadowColor: AppColors.primary.withValues(alpha: 0.2),
+      shadowColor: AppColors.of(context).primary.withValues(alpha: 0.2),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: onTap,
@@ -400,12 +415,12 @@ class _DetectionEngineCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
+                color: AppColors.of(context).primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.auto_awesome_outlined,
-                color: AppColors.primary,
+                color: AppColors.of(context).primary,
               ),
             ),
             const SizedBox(width: 12),
@@ -414,7 +429,7 @@ class _DetectionEngineCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Hybrid Detection Engine',
+                    AppLocalizations.of(context)!.engineTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context)
@@ -424,7 +439,7 @@ class _DetectionEngineCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Local blocklist  •  Gemini Flash AI',
+                    AppLocalizations.of(context)!.engineSubtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,
@@ -463,7 +478,7 @@ class _SecondaryTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: AppColors.primary, size: 22),
+              Icon(icon, color: AppColors.of(context).primary, size: 22),
               const SizedBox(height: 10),
               Text(
                 title,
@@ -499,22 +514,19 @@ class _CommunityReportCard extends StatelessWidget {
     );
   }
 
-  String get _label {
-    switch (target) {
-      case CheckTarget.phone:
-        return 'Số điện thoại';
-      case CheckTarget.bankAccount:
-        return 'Tài khoản ngân hàng';
-      case CheckTarget.url:
-        return 'Đường dẫn';
-      case CheckTarget.content:
-        return ''; // content has no report card
-    }
-  }
+  // ignore: use_build_context_synchronously
+  BuildContext get _context => throw UnimplementedError();
 
   @override
   Widget build(BuildContext context) {
     if (target == CheckTarget.content) return const SizedBox.shrink();
+    final l = AppLocalizations.of(context)!;
+    final subtitle = switch (target) {
+      CheckTarget.phone => l.reportSubPhone,
+      CheckTarget.bankAccount => l.reportSubBank,
+      CheckTarget.url => l.reportSubUrl,
+      CheckTarget.content => '',
+    };
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -535,14 +547,14 @@ class _CommunityReportCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Báo cáo lừa đảo',
+                    l.reportTitle,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Giúp cộng đồng — báo cáo $_label giả mạo hoặc lừa đảo.',
+                    subtitle,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -555,7 +567,7 @@ class _CommunityReportCard extends StatelessWidget {
                 minimumSize: const Size(0, 36),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-              child: const Text('Báo cáo'),
+              child: Text(l.reportBtn),
             ),
           ],
         ),
@@ -595,35 +607,30 @@ class _ReportDialogState extends State<_ReportDialog> {
         );
     if (!mounted) return;
     Navigator.of(context).pop();
+    final l = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          ok
-              ? 'Đã gửi báo cáo. Cảm ơn bạn đóng góp cho cộng đồng!'
-              : 'Gửi báo cáo thất bại. Vui lòng thử lại.',
-        ),
+        content: Text(ok ? l.reportSuccess : l.reportFail),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final label = switch (widget.target) {
-      CheckTarget.phone => 'số điện thoại',
-      CheckTarget.bankAccount => 'số tài khoản',
-      CheckTarget.url => 'đường dẫn',
-      CheckTarget.content => 'nội dung',
+    final l = AppLocalizations.of(context)!;
+    final hintLabel = switch (widget.target) {
+      CheckTarget.phone => l.reportDialogLabelPhone,
+      CheckTarget.bankAccount => l.reportDialogLabelBank,
+      CheckTarget.url => l.reportDialogLabelUrl,
+      CheckTarget.content => '',
     };
     return AlertDialog(
-      title: const Text('Báo cáo lừa đảo'),
+      title: Text(l.reportDialogTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Nhập $label bạn muốn báo cáo:',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text(hintLabel, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           TextField(
             controller: _valueController,
@@ -637,24 +644,19 @@ class _ReportDialogState extends State<_ReportDialog> {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            'Mô tả ngắn (tuỳ chọn):',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text(l.reportDialogDesc, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           TextField(
             controller: _descController,
             maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: 'VD: Giả danh ngân hàng yêu cầu chuyển tiền...',
-            ),
+            decoration: InputDecoration(hintText: l.reportDialogDescHint),
           ),
         ],
       ),
       actions: [
         TextButton(
           onPressed: _submitting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Huỷ'),
+          child: Text(l.cancel),
         ),
         FilledButton(
           onPressed: _submitting ? null : _submit,
@@ -664,7 +666,7 @@ class _ReportDialogState extends State<_ReportDialog> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Gửi báo cáo'),
+              : Text(l.send),
         ),
       ],
     );
@@ -687,8 +689,8 @@ class _BankSelector extends StatelessWidget {
       initialValue: selectedBank,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: 'Ngân hàng',
-        hintText: 'Chọn ngân hàng của số tài khoản',
+        labelText: AppLocalizations.of(context)!.checkBankLabel,
+        hintText: AppLocalizations.of(context)!.checkBankHint,
         prefixIcon: const Icon(Icons.account_balance_outlined),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

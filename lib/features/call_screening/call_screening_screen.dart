@@ -5,6 +5,7 @@ import '../../data/models/risk_level.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../core/constants/api_config.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../services/call_screening_service.dart';
 import '../../services/data_reset_service.dart';
 import '../../services/local_risk_service.dart';
@@ -78,13 +79,11 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
     roleProvider.setRoleHeld(granted);
     if (granted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã bật cảnh báo cuộc gọi.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.callScreenEnabledSnack)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bạn cần cấp quyền sàng lọc cuộc gọi để dùng tính năng.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context)!.callScreenPermissionSnack)),
       );
     }
     await _refresh();
@@ -92,62 +91,53 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
 
   Future<void> _testSentry() async {
     final messenger = ScaffoldMessenger.of(context);
-    // 1. Send a normal message — appears in Sentry "Issues" as a non-error.
+    final snackText = AppLocalizations.of(context)!.sentrySnack;
     await Sentry.captureMessage(
       'Manual test from Bảo Vệ tab',
       level: SentryLevel.info,
     );
-    // 2. Synthesise an exception with stack trace.
     try {
       throw StateError('ScamGuard test exception ${DateTime.now()}');
     } catch (e, stack) {
       await Sentry.captureException(e, stackTrace: stack);
     }
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Đã gửi test event lên Sentry. Vào dashboard sentry.io để xác nhận.',
-        ),
-      ),
+      SnackBar(content: Text(snackText)),
     );
   }
 
   Future<void> _confirmReset() async {
     var alsoRemote = true;
+    final l = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: const Text('Reset toàn bộ dữ liệu app?'),
+          title: Text(l.resetDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Mọi lịch sử kiểm tra, danh sách offline, cache và device id '
-                'sẽ bị xoá. Hành động này không thể hoàn tác.',
-              ),
+              Text(l.resetDialogBody),
               const SizedBox(height: 12),
               CheckboxListTile(
                 value: alsoRemote,
                 onChanged: (v) => setLocal(() => alsoRemote = v ?? true),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
-                title: const Text('Xoá luôn lịch sử trên Supabase'),
-                subtitle: const Text(
-                    'Bỏ chọn nếu chỉ muốn xoá local, giữ lịch sử trên cloud.'),
+                title: Text(l.resetDialogRemoteCheck),
+                subtitle: Text(l.resetDialogRemoteCheckSub),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Huỷ'),
+              child: Text(l.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Reset',
-                  style: TextStyle(color: Colors.red)),
+              child: Text(l.resetBtn, style: const TextStyle(color: Colors.red)),
             ),
           ],
         ),
@@ -157,11 +147,10 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
     setState(() => _loading = true);
     await DataResetService().resetAll(includeRemote: alsoRemote);
     if (!mounted) return;
-    // Refresh provider's in-memory history list so the UI reflects the wipe.
     await context.read<ScamCheckProvider>().loadHistory();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã reset toàn bộ dữ liệu app.')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.resetDoneSnack)),
     );
     await _refresh();
   }
@@ -173,10 +162,14 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
     final suspicious = await _localRisk.phoneNumbersAt(RiskLevel.suspicious);
     await _service.syncBlocklist(scam: scam, suspicious: suspicious);
     if (!mounted) return;
+    final l = AppLocalizations.of(context)!;
     final msg = fetched == null
-        ? '${_localRisk.lastRefreshError ?? 'Không thể kết nối máy chủ'} '
-            '(đang dùng cache: ${scam.length} + ${suspicious.length}).'
-        : 'Đã tải $fetched mục từ máy chủ • ${scam.length} chặn / ${suspicious.length} cảnh báo.';
+        ? l.callScreenResyncFail(
+            _localRisk.lastRefreshError ?? l.callScreenNoServer,
+            scam.length,
+            suspicious.length,
+          )
+        : l.callScreenResyncSnack(fetched, scam.length, suspicious.length);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), duration: const Duration(seconds: 6)),
     );
@@ -188,7 +181,7 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
     final supported = Platform.isAndroid;
     final roleHeld = context.watch<CallScreeningRoleProvider>().roleHeld;
     return Scaffold(
-      appBar: AppBar(title: const Text('Cảnh báo cuộc gọi')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.callScreenTitle)),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -203,9 +196,9 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Danh sách cảnh báo offline',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context)!.callScreenOfflineList,
+                            style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                             ),
@@ -214,21 +207,21 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
                           _CountRow(
                             icon: Icons.dangerous_outlined,
                             color: AppColors.riskHigh,
-                            label: 'Số lừa đảo',
+                            label: AppLocalizations.of(context)!.callScreenScamCount,
                             count: _scamCount,
                           ),
                           const SizedBox(height: 8),
                           _CountRow(
                             icon: Icons.warning_amber_rounded,
                             color: AppColors.riskMedium,
-                            label: 'Số nghi ngờ',
+                            label: AppLocalizations.of(context)!.callScreenSuspiciousCount,
                             count: _suspiciousCount,
                           ),
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: supported ? _resync : null,
                             icon: const Icon(Icons.refresh),
-                            label: const Text('Đồng bộ lại từ máy chủ'),
+                            label: Text(AppLocalizations.of(context)!.callScreenResync),
                           ),
                         ],
                       ),
@@ -239,15 +232,14 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
                     ElevatedButton.icon(
                       onPressed: supported ? _enable : null,
                       icon: const Icon(Icons.shield_outlined),
-                      label: const Text('Bật cảnh báo cuộc gọi'),
+                      label: Text(AppLocalizations.of(context)!.callScreenEnableBtn),
                     ),
                   const SizedBox(height: 16),
                   _NavTile(
                     icon: Icons.format_list_bulleted,
                     accent: AppColors.riskHigh,
-                    title: 'Danh sách offline đang chặn',
-                    subtitle:
-                        'Xem các số điện thoại CallScreening đang giám sát ngay trên máy.',
+                    title: AppLocalizations.of(context)!.navTileBlocklist,
+                    subtitle: AppLocalizations.of(context)!.navTileBlocklistSub,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const BlocklistScreen(),
@@ -257,10 +249,9 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
                   const SizedBox(height: 10),
                   _NavTile(
                     icon: Icons.cloud_outlined,
-                    accent: AppColors.primary,
-                    title: 'Cơ sở dữ liệu lừa đảo',
-                    subtitle:
-                        'Duyệt / thêm / xoá số ĐT, tài khoản và đường dẫn rủi ro trên Supabase.',
+                    accent: AppColors.of(context).primary,
+                    title: AppLocalizations.of(context)!.navTileKnownRisks,
+                    subtitle: AppLocalizations.of(context)!.navTileKnownRisksSub,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const KnownRisksScreen(),
@@ -271,9 +262,8 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
                   _NavTile(
                     icon: Icons.restart_alt,
                     accent: AppColors.riskHigh,
-                    title: 'Reset toàn bộ dữ liệu app',
-                    subtitle:
-                        'Xoá lịch sử, blocklist offline, cache và device id. Bắt đầu lại từ trạng thái sạch.',
+                    title: AppLocalizations.of(context)!.navTileReset,
+                    subtitle: AppLocalizations.of(context)!.navTileResetSub,
                     onTap: _confirmReset,
                   ),
                   if (ApiConfig.hasSentry) ...[
@@ -281,9 +271,8 @@ class _CallScreeningScreenState extends State<CallScreeningScreen>
                     _NavTile(
                       icon: Icons.bug_report_outlined,
                       accent: AppColors.riskMedium,
-                      title: 'Gửi sự kiện test tới Sentry',
-                      subtitle:
-                          'Bắn 1 message + 1 exception để xác nhận crash reporting đang hoạt động.',
+                      title: AppLocalizations.of(context)!.navTileSentry,
+                      subtitle: AppLocalizations.of(context)!.navTileSentrySub,
                       onTap: _testSentry,
                     ),
                   ],
@@ -303,25 +292,26 @@ class _StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final (color, icon, title, body) = !supported
         ? (
             AppColors.riskUnknown,
             Icons.info_outline,
-            'Tính năng chỉ khả dụng trên Android',
-            'CallScreeningService là API riêng của Android (10+). Trên iOS chỉ có thể dùng tab Kiểm tra thủ công.',
+            l.callStatusAndroidOnly,
+            l.callStatusAndroidOnlyBody,
           )
         : roleHeld
             ? (
                 AppColors.riskSafe,
                 Icons.check_circle_outline,
-                'Đang bật cảnh báo cuộc gọi',
-                'Mọi cuộc gọi đến sẽ được đối chiếu với danh sách lừa đảo trên máy. Cuộc gọi lừa đảo sẽ bị từ chối, cuộc gọi nghi ngờ sẽ kèm thông báo cảnh báo.',
+                l.callStatusActive,
+                l.callStatusActiveBody,
               )
             : (
                 AppColors.riskMedium,
                 Icons.notifications_off_outlined,
-                'Chưa bật cảnh báo cuộc gọi',
-                'Bấm "Bật cảnh báo cuộc gọi" và chọn Scam Detector trong hộp thoại của hệ thống để cấp quyền sàng lọc.',
+                l.callStatusInactive,
+                l.callStatusInactiveBody,
               );
 
     return Container(
@@ -401,7 +391,7 @@ class _NavTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: AppColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -409,7 +399,7 @@ class _NavTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: AppColors.of(context).border),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -446,7 +436,7 @@ class _NavTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+              Icon(Icons.chevron_right, color: AppColors.of(context).textTertiary),
             ],
           ),
         ),
@@ -466,15 +456,15 @@ class _Notes extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, color: Colors.orange, size: 20),
-          SizedBox(width: 10),
+          const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Cảnh báo cuộc gọi sử dụng dữ liệu offline trong app, không gửi số điện thoại của bạn ra ngoài. Yêu cầu Android 10 trở lên.',
-              style: TextStyle(fontSize: 13, height: 1.4),
+              AppLocalizations.of(context)!.callScreenNote,
+              style: const TextStyle(fontSize: 13, height: 1.4),
             ),
           ),
         ],

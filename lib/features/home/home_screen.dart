@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/risk_level.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../services/call_screening_service.dart';
 import '../../services/local_risk_service.dart';
 import '../call_screening/call_screening_role_provider.dart';
@@ -26,11 +27,12 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final history = context.watch<ScamCheckProvider>().historyItems;
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: const Text('Scam Guard'),
+        title: Text(l.appName),
         actions: const [
           _NotificationsBell(),
           _SettingsButton(),
@@ -45,35 +47,35 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _StatsRow(history: history),
             const SizedBox(height: 24),
-            const _SectionTitle('Trung tâm điều khiển'),
+            _SectionTitle(l.homeControlCenter),
             const SizedBox(height: 12),
-            const _CheckTile(
+            _CheckTile(
               icon: Icons.phone_outlined,
-              title: 'Kiểm tra số điện thoại',
-              subtitle: 'Đối chiếu danh sách lừa đảo + AI phân tích',
-              accent: AppColors.primary,
+              title: l.homeCheckPhone,
+              subtitle: l.homeCheckPhoneSub,
+              accent: AppColors.of(context).primary,
               target: CheckTarget.phone,
             ),
             const SizedBox(height: 10),
-            const _CheckTile(
+            _CheckTile(
               icon: Icons.account_balance_outlined,
-              title: 'Kiểm tra tài khoản ngân hàng',
-              subtitle: 'Kiểm tra số tài khoản trước khi chuyển tiền',
+              title: l.homeCheckBank,
+              subtitle: l.homeCheckBankSub,
               accent: AppColors.secondary,
               target: CheckTarget.bankAccount,
             ),
             const SizedBox(height: 10),
-            const _CheckTile(
+            _CheckTile(
               icon: Icons.link,
-              title: 'Phân tích đường dẫn',
-              subtitle: 'Phát hiện URL phishing, giả mạo thương hiệu',
+              title: l.homeCheckUrl,
+              subtitle: l.homeCheckUrlSub,
               accent: AppColors.riskMedium,
               target: CheckTarget.url,
             ),
             const SizedBox(height: 10),
             const _ContentAnalysisTile(),
             const SizedBox(height: 24),
-            const _SectionTitle('Hoạt động gần đây'),
+            _SectionTitle(l.homeRecentActivity),
             const SizedBox(height: 8),
             _RecentActivity(items: history.take(3).toList()),
           ],
@@ -129,10 +131,10 @@ class _NotificationsBellState extends State<_NotificationsBell> {
       clipBehavior: Clip.none,
       children: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined,
-              color: AppColors.textSecondary),
+          icon: Icon(Icons.notifications_outlined,
+              color: AppColors.of(context).textSecondary),
           onPressed: _open,
-          tooltip: 'Thông báo',
+          tooltip: AppLocalizations.of(context)!.tooltipNotifications,
         ),
         if (unread > 0)
           Positioned(
@@ -144,7 +146,7 @@ class _NotificationsBellState extends State<_NotificationsBell> {
               decoration: BoxDecoration(
                 color: AppColors.riskHigh,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: AppColors.surface, width: 1.5),
+                border: Border.all(color: AppColors.of(context).surface, width: 1.5),
               ),
               child: Text(
                 unread > 99 ? '99+' : '$unread',
@@ -176,9 +178,9 @@ class _SettingsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
+      icon: Icon(Icons.settings_outlined, color: AppColors.of(context).textSecondary),
       onPressed: () => _open(context),
-      tooltip: 'Cài đặt',
+      tooltip: AppLocalizations.of(context)!.tooltipSettings,
     );
   }
 }
@@ -234,12 +236,12 @@ class _ProtectionHeroState extends State<_ProtectionHero>
     roleProvider.setRoleHeld(granted);
     if (granted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã bật bảo vệ thời gian thực.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.heroEnabledSnack)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bạn cần cấp quyền sàng lọc cuộc gọi để bật bảo vệ.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.heroPermissionSnack),
         ),
       );
     }
@@ -250,20 +252,25 @@ class _ProtectionHeroState extends State<_ProtectionHero>
     final state = context.watch<CallScreeningRoleProvider>();
     final loading = state.loading;
     final roleHeld = state.roleHeld;
+    final l = AppLocalizations.of(context)!;
     final subtitle = !_supported
-        ? 'iOS chỉ hỗ trợ kiểm tra thủ công — tính năng sàng lọc cuộc gọi cần Android.'
+        ? l.heroSubtitleIos
         : roleHeld
-            ? 'AI đang đối chiếu mọi cuộc gọi đến với danh sách lừa đảo trên máy.'
-            : 'Bật để Scam Detector tự chặn cuộc gọi từ số đã biết là lừa đảo.';
+            ? l.heroSubtitleActive
+            : l.heroSubtitleInactive;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryDark],
+        gradient: isDark ? null : LinearGradient(
+          colors: [colors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        color: isDark ? colors.surface : null,
+        border: isDark ? Border.all(color: colors.border) : null,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -275,10 +282,10 @@ class _ProtectionHeroState extends State<_ProtectionHero>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: isDark ? colors.primary.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.shield, color: Colors.white),
+                child: Icon(Icons.shield, color: isDark ? colors.primary : Colors.white),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -286,9 +293,9 @@ class _ProtectionHeroState extends State<_ProtectionHero>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Bảo vệ thời gian thực',
+                      AppLocalizations.of(context)!.heroTitle,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
+                            color: isDark ? colors.textPrimary : Colors.white,
                             fontWeight: FontWeight.w700,
                           ),
                     ),
@@ -298,7 +305,7 @@ class _ProtectionHeroState extends State<_ProtectionHero>
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
-                          ?.copyWith(color: Colors.white70),
+                          ?.copyWith(color: isDark ? colors.textSecondary : Colors.white70),
                     ),
                   ],
                 ),
@@ -313,12 +320,13 @@ class _ProtectionHeroState extends State<_ProtectionHero>
   }
 
   Widget _buildStatusRow({required bool loading, required bool roleHeld}) {
+    final l = AppLocalizations.of(context)!;
     if (loading) {
       return _StatusPill(
         color: Colors.white.withValues(alpha: 0.6),
         background: Colors.white.withValues(alpha: 0.16),
         icon: Icons.hourglass_empty,
-        label: 'Đang kiểm tra…',
+        label: l.heroStatusChecking,
       );
     }
     if (!_supported) {
@@ -326,25 +334,25 @@ class _ProtectionHeroState extends State<_ProtectionHero>
         color: Colors.white,
         background: Colors.white.withValues(alpha: 0.16),
         icon: Icons.info_outline,
-        label: 'Chỉ kiểm tra thủ công (iOS)',
+        label: l.heroStatusIos,
       );
     }
     if (roleHeld) {
-      return const _StatusPill(
+      return _StatusPill(
         color: AppColors.riskSafe,
         background: AppColors.riskSafeContainer,
         icon: Icons.check_circle,
-        label: 'Đang hoạt động',
+        label: l.heroStatusActive,
       );
     }
     return Row(
       children: [
-        const Flexible(
+        Flexible(
           child: _StatusPill(
             color: AppColors.riskHigh,
             background: AppColors.riskHighContainer,
             icon: Icons.notifications_off_outlined,
-            label: 'Chưa bật',
+            label: l.heroStatusInactive,
           ),
         ),
         const SizedBox(width: 8),
@@ -363,9 +371,9 @@ class _ProtectionHeroState extends State<_ProtectionHero>
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text(
-                  'Bật ngay',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+              : Text(
+                  l.heroEnableBtn,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
         ),
       ],
@@ -423,6 +431,7 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final total = history.length;
     final scams = history.where((h) => h.riskLevel == RiskLevel.scam).length;
     final safe = history.where((h) => h.riskLevel == RiskLevel.safe).length;
@@ -430,16 +439,16 @@ class _StatsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _StatCard(
-            label: 'Đã kiểm tra',
+            label: l.statChecked,
             value: '$total',
-            color: AppColors.primary,
+            color: AppColors.of(context).primary,
             icon: Icons.fact_check_outlined,
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: _StatCard(
-            label: 'An toàn',
+            label: l.statSafe,
             value: '$safe',
             color: AppColors.riskSafe,
             icon: Icons.verified_outlined,
@@ -448,7 +457,7 @@ class _StatsRow extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: _StatCard(
-            label: 'Lừa đảo',
+            label: l.statScam,
             value: '$scams',
             color: AppColors.riskHigh,
             icon: Icons.dangerous_outlined,
@@ -477,9 +486,9 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,7 +547,7 @@ class _CheckTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: AppColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -550,10 +559,10 @@ class _CheckTile extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: const Border(
-              top: BorderSide(color: AppColors.border),
-              right: BorderSide(color: AppColors.border),
-              bottom: BorderSide(color: AppColors.border),
+            border: Border(
+              top: BorderSide(color: AppColors.of(context).border),
+              right: BorderSide(color: AppColors.of(context).border),
+              bottom: BorderSide(color: AppColors.of(context).border),
             ),
           ),
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -594,7 +603,7 @@ class _CheckTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+              Icon(Icons.chevron_right, color: AppColors.of(context).textTertiary),
             ],
           ),
         ),
@@ -610,6 +619,9 @@ class _ContentAnalysisTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
@@ -620,11 +632,13 @@ class _ContentAnalysisTile extends StatelessWidget {
         ),
         child: Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryDark],
+            gradient: isDark ? null : LinearGradient(
+              colors: [colors.primary, AppColors.primaryDark],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
+            color: isDark ? colors.surface : null,
+            border: isDark ? Border.all(color: colors.border) : null,
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -634,10 +648,10 @@ class _ContentAnalysisTile extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: isDark ? colors.primary.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.auto_awesome, color: Colors.white),
+                child: Icon(Icons.auto_awesome, color: isDark ? colors.primary : Colors.white),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -645,25 +659,25 @@ class _ContentAnalysisTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Phân tích nội dung / tin nhắn',
+                      l.homeCheckContent,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white,
+                            color: isDark ? colors.textPrimary : Colors.white,
                             fontWeight: FontWeight.w700,
                           ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Dán SMS, email, mô tả cuộc gọi — AI phân tích đa góc nhìn',
+                      l.homeCheckContentSub,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.85),
+                            color: isDark ? colors.textSecondary : Colors.white.withValues(alpha: 0.85),
                           ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white70),
+              Icon(Icons.chevron_right, color: isDark ? colors.textTertiary : Colors.white70),
             ],
           ),
         ),
@@ -682,18 +696,18 @@ class _RecentActivity extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.of(context).surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.of(context).border),
         ),
         child: Row(
           children: [
-            const Icon(Icons.lightbulb_outline,
-                color: AppColors.textTertiary),
+            Icon(Icons.lightbulb_outline,
+                color: AppColors.of(context).textTertiary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Chưa có lượt kiểm tra nào. Hãy thử với một số điện thoại bất kỳ trong tab Kiểm tra.',
+                AppLocalizations.of(context)!.homeNoActivity,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -704,9 +718,9 @@ class _RecentActivity extends StatelessWidget {
     final df = DateFormat('dd/MM HH:mm');
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.of(context).border),
       ),
       child: Column(
         children: [
@@ -768,7 +782,7 @@ class _ActivityRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${item.riskLevel.label} • ${df.format(item.checkedAt)}',
+                    '${item.riskLevel.localizedLabel(context)} • ${df.format(item.checkedAt)}',
                     style: Theme.of(context)
                         .textTheme
                         .labelSmall
@@ -777,7 +791,7 @@ class _ActivityRow extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+            Icon(Icons.chevron_right, color: AppColors.of(context).textTertiary),
           ],
         ),
       ),

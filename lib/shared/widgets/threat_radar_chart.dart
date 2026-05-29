@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 
 /// 4-axis radar / spider chart showing the psychological factors.
 ///
@@ -20,23 +21,38 @@ class ThreatRadarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final l = AppLocalizations.of(context)!;
     return SizedBox(
       width: size,
       height: size,
       child: CustomPaint(
-        painter: _RadarPainter(factors: factors, color: color),
+        painter: _RadarPainter(
+          factors: factors,
+          color: color,
+          labels: [l.radarPressure, l.radarAuthority, l.radarGreed, l.radarFear],
+          gridColor: colors.outlineVariant,
+          labelColor: colors.textSecondary,
+        ),
       ),
     );
   }
 }
 
 class _RadarPainter extends CustomPainter {
-  _RadarPainter({required this.factors, required this.color});
+  _RadarPainter({
+    required this.factors,
+    required this.color,
+    required this.labels,
+    required this.gridColor,
+    required this.labelColor,
+  });
 
   final PsychologicalFactors factors;
   final Color color;
-
-  static const _labels = ['Áp lực', 'Quyền lực', 'Lợi ích', 'Sợ hãi'];
+  final List<String> labels;
+  final Color gridColor;
+  final Color labelColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -56,7 +72,7 @@ class _RadarPainter extends CustomPainter {
 
     // Grid rings (4 levels).
     final gridPaint = Paint()
-      ..color = AppColors.outlineVariant.withValues(alpha: 0.5)
+      ..color = gridColor.withValues(alpha: 0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     for (var lvl = 1; lvl <= 4; lvl++) {
@@ -113,11 +129,11 @@ class _RadarPainter extends CustomPainter {
     final tp = TextPainter(textDirection: TextDirection.ltr);
     for (var i = 0; i < axes.length; i++) {
       tp.text = TextSpan(
-        text: _labels[i],
-        style: const TextStyle(
+        text: labels[i],
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
+          color: labelColor,
           letterSpacing: 0.5,
         ),
       );
@@ -132,5 +148,6 @@ class _RadarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RadarPainter old) =>
-      old.factors != factors || old.color != color;
+      old.factors != factors || old.color != color || old.labels != labels ||
+      old.gridColor != gridColor || old.labelColor != labelColor;
 }

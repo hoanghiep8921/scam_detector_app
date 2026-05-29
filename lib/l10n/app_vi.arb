@@ -1,0 +1,421 @@
+{
+  "@@locale": "vi",
+
+  "appName": "Scam Guard",
+  "navHome": "Trang chủ",
+  "navCheck": "Kiểm tra",
+  "navHistory": "Lịch sử",
+  "navProtect": "Bảo vệ",
+
+  "tooltipNotifications": "Thông báo",
+  "tooltipSettings": "Cài đặt",
+  "tooltipCopy": "Sao chép",
+  "tooltipRefresh": "Tải lại từ máy chủ",
+  "tooltipDeleteAll": "Xoá tất cả",
+  "tooltipResync": "Đồng bộ lại từ máy chủ",
+
+  "homeControlCenter": "Trung tâm điều khiển",
+  "homeRecentActivity": "Hoạt động gần đây",
+  "homeNoActivity": "Chưa có lượt kiểm tra nào. Hãy thử với một số điện thoại bất kỳ trong tab Kiểm tra.",
+
+  "homeCheckPhone": "Kiểm tra số điện thoại",
+  "homeCheckPhoneSub": "Đối chiếu danh sách lừa đảo + AI phân tích",
+  "homeCheckBank": "Kiểm tra tài khoản ngân hàng",
+  "homeCheckBankSub": "Kiểm tra số tài khoản trước khi chuyển tiền",
+  "homeCheckUrl": "Phân tích đường dẫn",
+  "homeCheckUrlSub": "Phát hiện URL phishing, giả mạo thương hiệu",
+  "homeCheckContent": "Phân tích nội dung / tin nhắn",
+  "homeCheckContentSub": "Dán SMS, email, mô tả cuộc gọi — AI phân tích đa góc nhìn",
+
+  "statChecked": "Đã kiểm tra",
+  "statSafe": "An toàn",
+  "statScam": "Lừa đảo",
+
+  "heroTitle": "Bảo vệ thời gian thực",
+  "heroSubtitleIos": "iOS chỉ hỗ trợ kiểm tra thủ công — tính năng sàng lọc cuộc gọi cần Android.",
+  "heroSubtitleActive": "AI đang đối chiếu mọi cuộc gọi đến với danh sách lừa đảo trên máy.",
+  "heroSubtitleInactive": "Bật để Scam Detector tự chặn cuộc gọi từ số đã biết là lừa đảo.",
+  "heroStatusChecking": "Đang kiểm tra…",
+  "heroStatusIos": "Chỉ kiểm tra thủ công (iOS)",
+  "heroStatusActive": "Đang hoạt động",
+  "heroStatusInactive": "Chưa bật",
+  "heroEnableBtn": "Bật ngay",
+  "heroEnabledSnack": "Đã bật bảo vệ thời gian thực.",
+  "heroPermissionSnack": "Bạn cần cấp quyền sàng lọc cuộc gọi để bật bảo vệ.",
+
+  "checkTitle": "Scam Guard",
+  "checkVerifyTitle": "Xác minh đối tượng",
+  "checkSubmitBtn": "Kiểm tra ngay",
+  "checkAnalyzeBtn": "Phân tích bằng AI",
+  "checkEmptyError": "Vui lòng nhập thông tin cần kiểm tra.",
+  "checkValidationRequired": "Vui lòng nhập thông tin",
+  "checkValidationPhone": "Số điện thoại không hợp lệ",
+  "checkValidationBank": "Số tài khoản không hợp lệ",
+  "checkValidationUrl": "Đường dẫn không hợp lệ",
+  "checkValidationContentShort": "Nội dung quá ngắn (tối thiểu 5 ký tự)",
+
+  "checkSubtitlePhone": "Đối chiếu danh sách rủi ro toàn cầu và phân tích tâm lý lừa đảo theo thời gian thực.",
+  "checkSubtitleBank": "Kiểm tra số tài khoản nhận tiền có nằm trong các vụ lừa đảo đã được báo cáo.",
+  "checkSubtitleUrl": "Phân tích cấu trúc tên miền và dấu hiệu giả mạo thương hiệu.",
+  "checkSubtitleContent": "Dán SMS, email hoặc mô tả tình huống — AI phân tích đa góc nhìn.",
+
+  "checkHintPhone": "+84 9XX XXX XXX",
+  "checkHintBank": "VD: 1903 5762 8810",
+  "checkHintUrl": "VD: vietcombank-online.xyz",
+  "checkHintContent": "VD: \"Vietcombank thông báo tài khoản của quý khách bị khoá. Vui lòng truy cập http://vcb-xacminh.tk để xác minh trong 10 phút...\"",
+
+  "checkBankLabel": "Ngân hàng",
+  "checkBankHint": "Chọn ngân hàng của số tài khoản",
+  "checkBankHintOther": "Nhập số tài khoản (6–30 chữ số)",
+  "checkBankValidationRange": "Số tài khoản {bank} thường có {min}–{max} chữ số",
+  "@checkBankValidationRange": {
+    "placeholders": {
+      "bank": {"type": "String"},
+      "min": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+
+  "segPhone": "Số ĐT",
+  "segBank": "Tài khoản",
+  "segUrl": "Đường dẫn",
+  "segContent": "Nội dung",
+
+  "engineTitle": "Hybrid Detection Engine",
+  "engineSubtitle": "Local blocklist  •  Gemini Flash AI",
+
+  "historyTile": "Lịch sử",
+  "historyTileSub": "Xem các lượt đã kiểm tra",
+  "tipsTile": "Mẹo bảo vệ",
+  "tipsTileSub": "Không cung cấp OTP, mã PIN cho ai",
+
+  "reportTitle": "Báo cáo lừa đảo",
+  "reportSubPhone": "Giúp cộng đồng — báo cáo số điện thoại giả mạo hoặc lừa đảo.",
+  "reportSubBank": "Giúp cộng đồng — báo cáo tài khoản ngân hàng giả mạo hoặc lừa đảo.",
+  "reportSubUrl": "Giúp cộng đồng — báo cáo đường dẫn giả mạo hoặc lừa đảo.",
+  "reportBtn": "Báo cáo",
+  "reportDialogTitle": "Báo cáo lừa đảo",
+  "reportDialogLabelPhone": "Nhập số điện thoại bạn muốn báo cáo:",
+  "reportDialogLabelBank": "Nhập số tài khoản bạn muốn báo cáo:",
+  "reportDialogLabelUrl": "Nhập đường dẫn bạn muốn báo cáo:",
+  "reportDialogDesc": "Mô tả ngắn (tuỳ chọn):",
+  "reportDialogDescHint": "VD: Giả danh ngân hàng yêu cầu chuyển tiền...",
+  "reportSuccess": "Đã gửi báo cáo. Cảm ơn bạn đóng góp cho cộng đồng!",
+  "reportFail": "Gửi báo cáo thất bại. Vui lòng thử lại.",
+  "cancel": "Huỷ",
+  "confirm": "Xác nhận",
+  "send": "Gửi báo cáo",
+
+  "resultTitle": "Kết quả phân tích",
+  "resultCopied": "Đã sao chép kết quả",
+  "resultShareReasons": "Lý do:",
+  "resultWarningReasons": "Lý do cảnh báo",
+  "resultMultiAxis": "Phân tích đa góc nhìn",
+  "resultPsyVector": "Phân tích vector tâm lý",
+  "resultRadarDesc": "Mỗi trục là một thủ thuật tâm lý lừa đảo phổ biến (0–100). Diện tích càng lớn, mức độ thao túng càng cao.",
+  "resultOpenLink": "Mở liên kết",
+  "resultGoHome": "Về trang chủ",
+  "resultUrlWarning": "Cảnh báo URL",
+  "resultWarnDialogTitle": "Cảnh báo",
+  "resultWarnDialogContent": "Liên kết này được đánh giá {level}. Bạn có chắc muốn mở?",
+  "@resultWarnDialogContent": {
+    "placeholders": {
+      "level": {"type": "String"}
+    }
+  },
+  "resultWarnCancel": "Huỷ",
+  "resultWarnOpen": "Vẫn mở",
+  "resultOpenFail": "Không mở được liên kết",
+
+  "aiCardTitle": "Phân tích hành vi bằng AI",
+  "aiCardSubUnknown": "Chưa có dữ liệu offline / cộng đồng. Để Gemini phân tích kịch bản, dấu hiệu thao túng và các yếu tố tâm lý.",
+  "aiCardSubKnown": "Bổ sung phân tích hành vi (urgency / fear / authority / greed) và lý do chi tiết từ AI.",
+  "aiCtaUnknown": "Phân tích sâu bằng AI Gemini",
+  "aiCtaKnown": "Phân tích hành vi bằng AI",
+  "aiCtaRedo": "Phân tích lại bằng AI",
+  "aiAnalyzing": "Đang phân tích…",
+  "aiOverlayMsg": "Gemini đang phân tích hành vi…",
+
+  "axisLinguistic": "Ngôn ngữ học",
+  "axisLinguisticSub": "Dấu hiệu trong cách diễn đạt / từ vựng",
+  "axisCyber": "An ninh mạng",
+  "axisCyberSub": "Dấu hiệu kỹ thuật / hạ tầng",
+  "axisSocial": "Tâm lý học xã hội",
+  "axisSocialSub": "Thủ thuật thuyết phục (Cialdini & thao túng cảm xúc)",
+
+  "securityProtocolTitle": "Cần áp dụng quy trình bảo vệ",
+  "securityProtocolBody": "Không cung cấp OTP, mã PIN, mật khẩu cho bất kỳ ai. Báo cáo cho ngân hàng / cơ quan chức năng nếu đã chuyển tiền.",
+
+  "riskSafe": "An toàn",
+  "riskSuspicious": "Nghi ngờ",
+  "riskScam": "Lừa đảo",
+  "riskUnknown": "Chưa xác định",
+
+  "targetPhone": "Số điện thoại",
+  "targetBank": "Tài khoản ngân hàng",
+  "targetUrl": "Đường dẫn",
+  "targetContent": "Nội dung",
+
+  "historyScreenTitle": "Lịch sử kiểm tra",
+  "historyEmpty": "Chưa có lượt kiểm tra nào",
+  "historyDeleteAllConfirmTitle": "Xoá toàn bộ lịch sử?",
+  "historyDeleteAllConfirmBody": "Hành động này không thể hoàn tác.",
+  "historyDeleteBtn": "Xoá",
+
+  "notifTitle": "Thông báo",
+  "notifEmpty": "Chưa có cuộc gọi nào được CallScreening xử lý.\nKhi có số trong danh sách lừa đảo gọi tới, bạn sẽ thấy ở đây.",
+  "notifCallBlocked": "Đã chặn cuộc gọi",
+  "notifCallSuspicious": "Cuộc gọi nghi ngờ",
+
+  "callScreenTitle": "Cảnh báo cuộc gọi",
+  "callScreenOfflineList": "Danh sách cảnh báo offline",
+  "callScreenScamCount": "Số lừa đảo",
+  "callScreenSuspiciousCount": "Số nghi ngờ",
+  "callScreenResync": "Đồng bộ lại từ máy chủ",
+  "callScreenEnableBtn": "Bật cảnh báo cuộc gọi",
+  "callScreenEnabledSnack": "Đã bật cảnh báo cuộc gọi.",
+  "callScreenPermissionSnack": "Bạn cần cấp quyền sàng lọc cuộc gọi để dùng tính năng.",
+  "callScreenResyncSnack": "Đã tải {count} mục từ máy chủ • {scam} chặn / {suspicious} cảnh báo.",
+  "@callScreenResyncSnack": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "scam": {"type": "int"},
+      "suspicious": {"type": "int"}
+    }
+  },
+  "callScreenResyncFail": "{error} (đang dùng cache: {scam} + {suspicious}).",
+  "@callScreenResyncFail": {
+    "placeholders": {
+      "error": {"type": "String"},
+      "scam": {"type": "int"},
+      "suspicious": {"type": "int"}
+    }
+  },
+  "callScreenNoServer": "Không thể kết nối máy chủ",
+
+  "callStatusAndroidOnly": "Tính năng chỉ khả dụng trên Android",
+  "callStatusAndroidOnlyBody": "CallScreeningService là API riêng của Android (10+). Trên iOS chỉ có thể dùng tab Kiểm tra thủ công.",
+  "callStatusActive": "Đang bật cảnh báo cuộc gọi",
+  "callStatusActiveBody": "Mọi cuộc gọi đến sẽ được đối chiếu với danh sách lừa đảo trên máy. Cuộc gọi lừa đảo sẽ bị từ chối, cuộc gọi nghi ngờ sẽ kèm thông báo cảnh báo.",
+  "callStatusInactive": "Chưa bật cảnh báo cuộc gọi",
+  "callStatusInactiveBody": "Bấm \"Bật cảnh báo cuộc gọi\" và chọn Scam Detector trong hộp thoại của hệ thống để cấp quyền sàng lọc.",
+  "callScreenNote": "Cảnh báo cuộc gọi sử dụng dữ liệu offline trong app, không gửi số điện thoại của bạn ra ngoài. Yêu cầu Android 10 trở lên.",
+
+  "navTileBlocklist": "Danh sách offline đang chặn",
+  "navTileBlocklistSub": "Xem các số điện thoại CallScreening đang giám sát ngay trên máy.",
+  "navTileKnownRisks": "Cơ sở dữ liệu lừa đảo",
+  "navTileKnownRisksSub": "Duyệt / thêm / xoá số ĐT, tài khoản và đường dẫn rủi ro trên Supabase.",
+  "navTileReset": "Reset toàn bộ dữ liệu app",
+  "navTileResetSub": "Xoá lịch sử, blocklist offline, cache và device id. Bắt đầu lại từ trạng thái sạch.",
+  "navTileSentry": "Gửi sự kiện test tới Sentry",
+  "navTileSentrySub": "Bắn 1 message + 1 exception để xác nhận crash reporting đang hoạt động.",
+  "sentrySnack": "Đã gửi test event lên Sentry. Vào dashboard sentry.io để xác nhận.",
+
+  "resetDialogTitle": "Reset toàn bộ dữ liệu app?",
+  "resetDialogBody": "Mọi lịch sử kiểm tra, danh sách offline, cache và device id sẽ bị xoá. Hành động này không thể hoàn tác.",
+  "resetDialogRemoteCheck": "Xoá luôn lịch sử trên Supabase",
+  "resetDialogRemoteCheckSub": "Bỏ chọn nếu chỉ muốn xoá local, giữ lịch sử trên cloud.",
+  "resetBtn": "Reset",
+  "resetDoneSnack": "Đã reset toàn bộ dữ liệu app.",
+
+  "blocklistTitle": "Danh sách offline đang chặn",
+  "blocklistSummary": "{total} số đang được giám sát",
+  "@blocklistSummary": {
+    "placeholders": {
+      "total": {"type": "int"}
+    }
+  },
+  "blocklistSummarySub": "{scam} số sẽ bị chặn, {suspicious} số sẽ kèm cảnh báo.",
+  "@blocklistSummarySub": {
+    "placeholders": {
+      "scam": {"type": "int"},
+      "suspicious": {"type": "int"}
+    }
+  },
+  "blocklistSectionScam": "Số sẽ bị chặn (lừa đảo)",
+  "blocklistSectionSuspicious": "Số sẽ kèm cảnh báo (nghi ngờ)",
+  "blocklistEmpty": "Chưa có số nào trong danh sách offline. Bấm nút đồng bộ ở góc phải để tải về từ máy chủ.",
+  "blocklistSectionEmpty": "Chưa có số nào ở mức này.",
+  "blocklistNote": "Đây là danh sách số điện thoại đã được tải xuống máy. CallScreeningService chạy hoàn toàn offline — không gửi số ra ngoài.",
+  "blocklistResyncSnack": "Đã đồng bộ {scam} số lừa đảo, {suspicious} số nghi ngờ.",
+  "@blocklistResyncSnack": {
+    "placeholders": {
+      "scam": {"type": "int"},
+      "suspicious": {"type": "int"}
+    }
+  },
+
+  "knownRisksTitle": "Cơ sở dữ liệu lừa đảo",
+  "knownRisksTabPhone": "Số ĐT ({count})",
+  "@knownRisksTabPhone": {
+    "placeholders": { "count": {"type": "int"} }
+  },
+  "knownRisksTabBank": "Tài khoản ({count})",
+  "@knownRisksTabBank": {
+    "placeholders": { "count": {"type": "int"} }
+  },
+  "knownRisksTabUrl": "Đường dẫn ({count})",
+  "@knownRisksTabUrl": {
+    "placeholders": { "count": {"type": "int"} }
+  },
+  "knownRisksEmpty": "Chưa có dữ liệu cho danh mục này.\nKiểm tra kết nối Supabase rồi bấm tải lại.",
+  "knownRisksAddBtn": "Thêm",
+  "knownRisksAddedSnack": "Đã thêm vào cơ sở dữ liệu.",
+  "knownRisksDeleteTitle": "Xoá khỏi cơ sở dữ liệu?",
+  "knownRisksDeleteBody": "{value} sẽ bị xoá khỏi Supabase. Mọi thiết bị khác cũng sẽ không nhận được entry này khi đồng bộ.",
+  "@knownRisksDeleteBody": {
+    "placeholders": { "value": {"type": "String"} }
+  },
+  "knownRisksDeletedSnack": "Đã xoá {value}.",
+  "@knownRisksDeletedSnack": {
+    "placeholders": { "value": {"type": "String"} }
+  },
+  "knownRisksDeleteFail": "Không xoá được: {error}",
+  "@knownRisksDeleteFail": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "knownRisksSwipeDelete": "Xoá",
+  "addDialogTitle": "Thêm vào cơ sở dữ liệu",
+  "addDialogType": "Loại",
+  "addDialogTypePhone": "Số điện thoại",
+  "addDialogTypeBank": "Tài khoản NH",
+  "addDialogTypeUrl": "Đường dẫn",
+  "addDialogBank": "Ngân hàng",
+  "addDialogValue": "Giá trị",
+  "addDialogValueHint": "VD: 0888888888 / vietcombank-online.xyz",
+  "addDialogRisk": "Mức rủi ro",
+  "addDialogRiskScam": "Lừa đảo (scam)",
+  "addDialogRiskSuspicious": "Nghi ngờ (suspicious)",
+  "addDialogRiskSafe": "An toàn (safe)",
+  "addDialogSummary": "Tóm tắt (1 câu)",
+  "addDialogReasons": "Lý do (mỗi dòng 1 ý)",
+  "addDialogSave": "Lưu",
+  "addDialogSaveFail": "Lưu thất bại.",
+
+  "contentTitle": "Phân tích nội dung",
+  "contentHeadline": "Phân tích bằng AI đa góc nhìn",
+  "contentSubtitle": "Dán tin nhắn, mô tả cuộc gọi hoặc đính kèm ảnh / video. Gemini đọc cả OCR trong ảnh + nội dung video để phân tích theo 3 góc: ngôn ngữ học, an ninh mạng và tâm lý xã hội.",
+  "contentHint": "VD: \"Vietcombank xin chào quý khách, tài khoản của quý khách phát sinh giao dịch lạ...\"",
+  "contentPasteTooltip": "Dán từ clipboard",
+  "contentClipboardEmpty": "Clipboard rỗng",
+  "contentAnalyzeBtn": "Phân tích bằng AI",
+  "contentEmptyError": "Nhập text hoặc đính kèm ảnh / video để AI phân tích.",
+  "contentTextTooShort": "Text quá ngắn (tối thiểu 5 ký tự) hoặc kèm thêm ảnh.",
+  "contentOverlayText": "Gemini đang phân tích nội dung…",
+  "contentOverlayMedia": "Gemini đang đọc ảnh / video + phân tích…",
+  "attachLabel": "Đính kèm ảnh / video (tuỳ chọn)",
+  "attachLabelCount": "Đã đính kèm {count} ({size} / {max})",
+  "@attachLabelCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "size": {"type": "String"},
+      "max": {"type": "String"}
+    }
+  },
+  "attachGallery": "Thư viện",
+  "attachCamera": "Chụp ảnh",
+  "attachVideo": "Video",
+  "attachMaxImages": "Tối đa {max} ảnh / lần phân tích.",
+  "@attachMaxImages": {
+    "placeholders": { "max": {"type": "int"} }
+  },
+  "attachMaxVideo": "Đã có 1 video — chỉ phân tích 1 video / lần.",
+  "attachSizeExceeded": "Vượt quá tổng dung lượng cho phép (~18 MB). Hãy chọn file nhỏ hơn hoặc bớt media.",
+  "attachPickImageFail": "Không chọn được ảnh: {error}",
+  "@attachPickImageFail": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "attachPickVideoFail": "Không chọn được video: {error}",
+  "@attachPickVideoFail": {
+    "placeholders": { "error": {"type": "String"} }
+  },
+  "exampleSectionLabel": "Hoặc thử với mẫu có sẵn",
+  "exampleBankTitle": "Mạo danh ngân hàng",
+  "exampleBankBody": "Vietcombank thông báo: tài khoản của quý khách bị khoá do nghi ngờ gian lận. Vui lòng nhấn link sau để xác minh: http://vcb-online-secure.xyz/login. Nếu không xác minh trong 30 phút, mọi giao dịch sẽ bị huỷ.",
+  "exampleShopeeTitle": "CTV Shopee lãi cao",
+  "exampleShopeeBody": "Em chào anh/chị, em là tuyển dụng CTV Shopee. Anh/chị chỉ cần đặt đơn ảo, công ty hoàn lại tiền và cộng thêm 15% hoa hồng. Một ngày dễ kiếm 500-800k. Anh/chị quan tâm em gửi link nhóm Telegram.",
+  "examplePoliceTitle": "Giả công an",
+  "examplePoliceBody": "Đồng chí, đây là Đại uý Nguyễn Văn A — Phòng Cảnh sát Hình sự. Tài khoản của đồng chí có liên quan đường dây ma tuý xuyên quốc gia. Đồng chí phải chuyển toàn bộ tiền vào tài khoản tạm giữ của Bộ Công an để phục vụ điều tra trong 1 tiếng.",
+
+  "incomingSecurityWarning": "Cảnh báo bảo mật",
+  "incomingScamDetected": "AI PHÁT HIỆN MẪU LỪA ĐẢO",
+  "incomingSuspiciousDetected": "CẦN THẬN — DẤU HIỆU NGHI NGỜ",
+  "incomingCallLabel": "CUỘC GỌI ĐẾN",
+  "incomingCopyTooltip": "Sao chép số",
+  "incomingCopied": "Đã sao chép",
+  "incomingRiskAnalysis": "PHÂN TÍCH NGUY CƠ",
+  "incomingConfidence": "NIỀM TIN",
+  "incomingBlockBtn": "CHẶN & NGẮT MÁY",
+  "incomingWarnBtn": "GHI NHẬN CẢNH BÁO",
+  "incomingTrustBtn": "Tôi vẫn tin số này",
+  "incomingProtectedBy": "Bảo vệ chủ động bởi Scam Detector",
+  "incomingBlockedSnack": "Đã thêm {number} vào danh sách chặn lừa đảo.",
+  "@incomingBlockedSnack": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+  "incomingRemovedSnack": "Đã gỡ {number} khỏi danh sách chặn.",
+  "@incomingRemovedSnack": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+  "incomingNotInListSnack": "{number} không có trong danh sách offline.",
+  "@incomingNotInListSnack": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+
+  "settingsTitle": "Cài đặt",
+  "settingsAppearance": "Giao diện",
+  "settingsLight": "Sáng",
+  "settingsDark": "Tối",
+  "settingsSystem": "Theo hệ thống",
+  "settingsLanguage": "Ngôn ngữ",
+  "settingsLanguageVi": "Tiếng Việt",
+  "settingsLanguageEn": "English",
+  "settingsBehavior": "Điều hướng",
+  "settingsPreventMinimize": "Ngăn thu nhỏ khi bấm Back",
+  "settingsPreventMinimizeDesc": "Bấm Back sẽ quay màn trước thay vì thoát app.",
+  "settingsAbout": "Về ứng dụng",
+  "settingsAppName": "Scam Guard",
+  "settingsDataReset": "Reset toàn bộ dữ liệu",
+  "settingsResetDialogBody": "Hành động này sẽ xoá toàn bộ dữ liệu trên máy, bao gồm lịch sử, danh sách chặn và cài đặt. Tiếp tục?",
+  "settingsResetComingSoon": "Tính năng này sẽ được bổ sung sau.",
+
+  "checkEmptyInputError": "Vui lòng nhập thông tin cần kiểm tra.",
+  "screenedCallBlockedSummary": "Cuộc gọi bị chặn tự động vì khớp danh sách lừa đảo.",
+  "screenedCallWarnedSummary": "Cuộc gọi nghi ngờ — đã được cảnh báo nhưng không chặn.",
+  "screenedCallBlockedReason": "CallScreeningService đã chặn cuộc gọi từ {number}.",
+  "@screenedCallBlockedReason": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+  "screenedCallWarnedReason": "CallScreeningService cảnh báo cuộc gọi từ {number}.",
+  "@screenedCallWarnedReason": {
+    "placeholders": { "number": {"type": "String"} }
+  },
+  "screenedCallOfflineReason": "Số khớp danh sách offline được đồng bộ từ Scam Detector.",
+
+  "incomingCallSummary": "Cuộc gọi từ số có dấu hiệu {label}. Hãy thận trọng nếu bắt máy.",
+  "@incomingCallSummary": {
+    "placeholders": { "label": {"type": "String"} }
+  },
+  "incomingCallScreenedReason": "CallScreeningService phát hiện trùng danh sách offline.",
+
+  "checkBankDigits": "{count} chữ số",
+  "@checkBankDigits": {
+    "placeholders": { "count": {"type": "int"} }
+  },
+  "checkBankDigitRange": "{min}–{max} chữ số",
+  "@checkBankDigitRange": {
+    "placeholders": {
+      "min": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+  "checkBankHintWithRange": "VD: {bank} — {range}",
+
+  "riskScoreLabel": "ĐIỂM RỦI RO",
+  "radarPressure": "Áp lực",
+  "radarAuthority": "Quyền lực",
+  "radarGreed": "Lợi ích",
+  "radarFear": "Sợ hãi",
+  "scanningDefaultMessage": "Đang phân tích bằng AI…",
+  "scanningSubtitle": "Gemini đang phân tích đa góc nhìn — 2–5 giây."
+}

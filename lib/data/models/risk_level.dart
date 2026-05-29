@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Risk classification per the product spec.
 enum RiskLevel {
@@ -8,16 +9,33 @@ enum RiskLevel {
   scam,      // 🔴 Lừa đảo
   unknown;
 
+  /// Fallback label (English) — used in non-widget contexts (share text, logs).
+  /// Use [localizedLabel] in UI widgets instead.
   String get label {
     switch (this) {
       case RiskLevel.safe:
-        return 'An toàn';
+        return 'Safe';
       case RiskLevel.suspicious:
-        return 'Nghi ngờ';
+        return 'Suspicious';
       case RiskLevel.scam:
-        return 'Lừa đảo';
+        return 'Scam';
       case RiskLevel.unknown:
-        return 'Chưa xác định';
+        return 'Unknown';
+    }
+  }
+
+  /// Localized label — use this in UI widgets.
+  String localizedLabel(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    switch (this) {
+      case RiskLevel.safe:
+        return l.riskSafe;
+      case RiskLevel.suspicious:
+        return l.riskSuspicious;
+      case RiskLevel.scam:
+        return l.riskScam;
+      case RiskLevel.unknown:
+        return l.riskUnknown;
     }
   }
 

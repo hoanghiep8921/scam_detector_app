@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/scam_check_result.dart';
+import '../../flutter_gen/gen_l10n/app_localizations.dart';
 import '../../services/call_screening_service.dart';
 import '../../shared/widgets/risk_badge.dart';
 import '../result/result_screen.dart';
@@ -26,7 +27,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       // so they show up in the list immediately.
       final events = await CallScreeningService().drainScreeningEvents();
       if (events.isNotEmpty && mounted) {
-        await provider.ingestScreenedCalls(events);
+        final l = AppLocalizations.of(context)!;
+        await provider.ingestScreenedCalls(
+          events,
+          blockedSummary: l.screenedCallBlockedSummary,
+          warnedSummary: l.screenedCallWarnedSummary,
+          blockedReason: (n) => l.screenedCallBlockedReason(n),
+          warnedReason: (n) => l.screenedCallWarnedReason(n),
+          offlineReason: l.screenedCallOfflineReason,
+        );
       }
     });
   }
@@ -37,26 +46,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lịch sử kiểm tra'),
+        title: Text(AppLocalizations.of(context)!.historyScreenTitle),
         actions: [
           if (items.isNotEmpty)
             IconButton(
-              tooltip: 'Xoá tất cả',
+              tooltip: AppLocalizations.of(context)!.tooltipDeleteAll,
               icon: const Icon(Icons.delete_outline),
               onPressed: () async {
+                final l = AppLocalizations.of(context)!;
                 final ok = await showDialog<bool>(
                   context: context,
                   builder: (_) => AlertDialog(
-                    title: const Text('Xoá toàn bộ lịch sử?'),
-                    content: const Text('Hành động này không thể hoàn tác.'),
+                    title: Text(l.historyDeleteAllConfirmTitle),
+                    content: Text(l.historyDeleteAllConfirmBody),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Huỷ'),
+                        child: Text(l.cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Xoá'),
+                        child: Text(l.historyDeleteBtn),
                       ),
                     ],
                   ),
@@ -78,14 +88,14 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.history, size: 64, color: AppColors.textTertiary),
-          SizedBox(height: 12),
-          Text('Chưa có lượt kiểm tra nào',
-              style: TextStyle(color: AppColors.textSecondary)),
+          Icon(Icons.history, size: 64, color: AppColors.of(context).textTertiary),
+          const SizedBox(height: 12),
+          Text(AppLocalizations.of(context)!.historyEmpty,
+              style: TextStyle(color: AppColors.of(context).textSecondary)),
         ],
       ),
     );
@@ -117,8 +127,8 @@ class _List extends StatelessWidget {
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                '${r.target.label} • ${df.format(r.checkedAt)}',
-                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                '${r.target.localizedLabel(context)} • ${df.format(r.checkedAt)}',
+                style: TextStyle(fontSize: 12, color: AppColors.of(context).textSecondary),
               ),
             ),
             trailing: RiskBadge(level: r.riskLevel, score: r.riskScore),
